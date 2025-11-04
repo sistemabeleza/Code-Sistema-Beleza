@@ -164,7 +164,7 @@ model Profissional {
   id                    String               @id @default(cuid())
   salao_id              String
   nome                  String
-  telefone              String
+  telefone              String?
   email                 String?
   cpf                   String?
   especialidade         String?

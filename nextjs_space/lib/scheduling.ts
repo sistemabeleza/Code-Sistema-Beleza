@@ -184,20 +184,19 @@ export function parseDaysOff(daysOffJson: string | null): string[] | null {
 }
 
 /**
- * Horário padrão de trabalho (seg-sex 9h-18h, sáb 9h-13h)
+ * Horário padrão de trabalho (seg-sáb 08:00-20:00, domingo fechado)
  */
 export const DEFAULT_WORK_HOURS: WorkHours = {
-  mon: [{ start: '09:00', end: '18:00' }],
-  tue: [{ start: '09:00', end: '18:00' }],
-  wed: [{ start: '09:00', end: '18:00' }],
-  thu: [{ start: '09:00', end: '18:00' }],
-  fri: [{ start: '09:00', end: '18:00' }],
-  sat: [{ start: '09:00', end: '13:00' }]
+  mon: [{ start: '08:00', end: '20:00' }],
+  tue: [{ start: '08:00', end: '20:00' }],
+  wed: [{ start: '08:00', end: '20:00' }],
+  thu: [{ start: '08:00', end: '20:00' }],
+  fri: [{ start: '08:00', end: '20:00' }],
+  sat: [{ start: '08:00', end: '20:00' }],
+  sun: []  // Domingo fechado
 };
 
 /**
- * Pausa padrão para almoço
+ * Sem pausas por padrão
  */
-export const DEFAULT_BREAKS: Break[] = [
-  { start: '12:00', end: '13:00' }
-];
+export const DEFAULT_BREAKS: Break[] = [];

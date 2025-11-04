@@ -47,7 +47,6 @@ export default function ProfissionaisPage() {
     nome: '',
     telefone: '',
     email: '',
-    cpf: '',
     especialidade: '',
     bio: '',
     comissao_percentual: 0,
@@ -89,7 +88,6 @@ export default function ProfissionaisPage() {
       nome: '',
       telefone: '',
       email: '',
-      cpf: '',
       especialidade: '',
       bio: '',
       comissao_percentual: 0,
@@ -103,9 +101,8 @@ export default function ProfissionaisPage() {
     setEditando(prof)
     setFormData({
       nome: prof.nome,
-      telefone: prof.telefone,
+      telefone: prof.telefone || '',
       email: prof.email || '',
-      cpf: prof.cpf || '',
       especialidade: prof.especialidade || '',
       bio: prof.bio || '',
       comissao_percentual: Number(prof.comissao_percentual),
@@ -116,8 +113,8 @@ export default function ProfissionaisPage() {
   }
 
   async function salvar() {
-    if (!formData.nome || !formData.telefone) {
-      toast.error('Nome e telefone são obrigatórios')
+    if (!formData.nome || formData.nome.trim() === '') {
+      toast.error('Informe o nome do profissional.')
       return
     }
 
@@ -134,12 +131,15 @@ export default function ProfissionaisPage() {
       })
 
       if (res.ok) {
-        toast.success(editando ? 'Profissional atualizado!' : 'Profissional criado!')
+        const message = editando 
+          ? 'Profissional atualizado com sucesso!' 
+          : 'Profissional criado com horário padrão Seg–Sáb 08:00–20:00.'
+        toast.success(message)
         setDialogOpen(false)
         carregarDados()
       } else {
         const error = await res.json()
-        toast.error(error.error || 'Erro ao salvar')
+        toast.error(error.message || error.error || 'Erro ao salvar')
       }
     } catch (error) {
       toast.error('Erro ao salvar profissional')
@@ -290,18 +290,19 @@ export default function ProfissionaisPage() {
           </DialogHeader>
           
           <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="nome">Nome *</Label>
+              <Input
+                id="nome"
+                value={formData.nome}
+                onChange={(e) => setFormData(prev => ({ ...prev, nome: e.target.value }))}
+                placeholder="Nome completo do profissional"
+              />
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="nome">Nome *</Label>
-                <Input
-                  id="nome"
-                  value={formData.nome}
-                  onChange={(e) => setFormData(prev => ({ ...prev, nome: e.target.value }))}
-                  placeholder="Nome completo"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="telefone">Telefone *</Label>
+                <Label htmlFor="telefone">Telefone</Label>
                 <Input
                   id="telefone"
                   value={formData.telefone}
@@ -309,9 +310,6 @@ export default function ProfissionaisPage() {
                   placeholder="(00) 00000-0000"
                 />
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
                 <Input
@@ -320,15 +318,6 @@ export default function ProfissionaisPage() {
                   value={formData.email}
                   onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                   placeholder="email@exemplo.com"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="cpf">CPF</Label>
-                <Input
-                  id="cpf"
-                  value={formData.cpf}
-                  onChange={(e) => setFormData(prev => ({ ...prev, cpf: e.target.value }))}
-                  placeholder="000.000.000-00"
                 />
               </div>
             </div>
@@ -405,6 +394,15 @@ export default function ProfissionaisPage() {
                 )}
               </div>
             </div>
+
+            {!editando && (
+              <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                <p className="text-sm text-blue-800">
+                  <Clock className="inline h-4 w-4 mr-1" />
+                  <strong>Horário padrão:</strong> Segunda a Sábado, 08:00 às 20:00 (Domingo fechado). Você poderá personalizar depois.
+                </p>
+              </div>
+            )}
 
             <div className="flex justify-end gap-2 pt-4">
               <Button variant="outline" onClick={() => setDialogOpen(false)}>

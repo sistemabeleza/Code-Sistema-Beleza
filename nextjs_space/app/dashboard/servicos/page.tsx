@@ -84,13 +84,23 @@ export default function ServicosPage() {
   }
 
   async function salvar() {
-    if (!formData.nome || !formData.preco || !formData.duracao_minutos) {
-      toast.error('Nome, preço e duração são obrigatórios')
+    if (!formData.nome || formData.nome.trim() === '') {
+      toast.error('Informe o nome do serviço.')
+      return
+    }
+
+    if (!formData.duracao_minutos) {
+      toast.error('Informe a duração do serviço em minutos.')
       return
     }
 
     if (formData.duracao_minutos < 5 || formData.duracao_minutos > 480) {
-      toast.error('Duração deve estar entre 5 e 480 minutos')
+      toast.error('Duração deve estar entre 5 e 480 minutos.')
+      return
+    }
+
+    if (formData.preco === undefined || formData.preco === null || formData.preco < 0) {
+      toast.error('Informe o preço do serviço.')
       return
     }
 
@@ -107,12 +117,12 @@ export default function ServicosPage() {
       })
 
       if (res.ok) {
-        toast.success(editando ? 'Serviço atualizado!' : 'Serviço criado!')
+        toast.success(editando ? 'Serviço atualizado com sucesso!' : 'Serviço criado com sucesso!')
         setDialogOpen(false)
         carregarServicos()
       } else {
         const error = await res.json()
-        toast.error(error.error || 'Erro ao salvar')
+        toast.error(error.message || error.error || 'Erro ao salvar')
       }
     } catch (error) {
       toast.error('Erro ao salvar serviço')

@@ -1,6 +1,14 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { 
+  calculateAvailableSlots, 
+  parseWorkHours, 
+  parseBreaks, 
+  parseDaysOff,
+  DEFAULT_WORK_HOURS,
+  DEFAULT_BREAKS
+} from '@/lib/scheduling'
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,30 +20,50 @@ export async function GET(request: NextRequest) {
 
     if (!salao_id || !profissional_id || !servico_id || !data) {
       return NextResponse.json(
-        { error: 'Parâmetros obrigatórios: salao_id, profissional_id, servico_id, data' },
+        { error: 'E_MISSING_PARAMS', message: 'Parâmetros obrigatórios: salao_id, profissional_id, servico_id, data' },
         { status: 400 }
       )
     }
 
-    // Buscar serviço para saber a duração
-    const servico = await prisma.servico.findUnique({
-      where: { id: servico_id }
-    })
+    // Buscar profissional e serviço
+    const [profissional, servico] = await Promise.all([
+      prisma.profissional.findUnique({
+        where: { id: profissional_id }
+      }),
+      prisma.servico.findUnique({
+        where: { id: servico_id }
+      })
+    ])
 
-    if (!servico) {
+    if (!profissional) {
       return NextResponse.json(
-        { error: 'Serviço não encontrado' },
+        { error: 'E_PROFESSIONAL_NOT_FOUND', message: 'Profissional não encontrado' },
         { status: 404 }
       )
     }
 
-    const duracaoMinutos = servico.duracao_minutos
+    if (!servico) {
+      return NextResponse.json(
+        { error: 'E_SERVICE_NOT_FOUND', message: 'Serviço não encontrado' },
+        { status: 404 }
+      )
+    }
+
+    // Parse dos horários do profissional ou usa padrão
+    let workHours = parseWorkHours(profissional.work_hours)
+    if (!workHours) {
+      workHours = DEFAULT_WORK_HOURS
+    }
+
+    const breaks = parseBreaks(profissional.breaks) || []
+    const daysOff = parseDaysOff(profissional.days_off) || []
 
     // Buscar agendamentos do dia
-    const dataInicio = new Date(data)
+    const targetDate = new Date(data)
+    const dataInicio = new Date(targetDate)
     dataInicio.setHours(0, 0, 0, 0)
     
-    const dataFim = new Date(data)
+    const dataFim = new Date(targetDate)
     dataFim.setHours(23, 59, 59, 999)
 
     const agendamentos = await prisma.agendamento.findMany({
@@ -56,45 +84,27 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Gerar horários disponíveis (8h às 18h, intervalo de 30 minutos)
-    const horarios: string[] = []
-    const inicio = 8 * 60 // 8h em minutos
-    const fim = 18 * 60 // 18h em minutos
+    // Converter agendamentos para o formato esperado pela função de cálculo
+    const appointments = agendamentos.map(ag => ({
+      start_datetime: new Date(ag.hora_inicio),
+      end_datetime: new Date(ag.hora_fim)
+    }))
 
-    for (let minutos = inicio; minutos < fim; minutos += 30) {
-      const horas = Math.floor(minutos / 60)
-      const mins = minutos % 60
-      const horario = `${String(horas).padStart(2, '0')}:${String(mins).padStart(2, '0')}`
-      
-      // Verificar se o horário está disponível
-      const horarioInicio = new Date(data)
-      horarioInicio.setHours(horas, mins, 0, 0)
-
-      const horarioFim = new Date(horarioInicio)
-      horarioFim.setMinutes(horarioFim.getMinutes() + duracaoMinutos)
-
-      // Verificar conflitos
-      const temConflito = agendamentos.some(ag => {
-        const agInicio = new Date(ag.hora_inicio)
-        const agFim = new Date(ag.hora_fim)
-        
-        return (
-          (horarioInicio >= agInicio && horarioInicio < agFim) ||
-          (horarioFim > agInicio && horarioFim <= agFim) ||
-          (horarioInicio <= agInicio && horarioFim >= agFim)
-        )
-      })
-
-      if (!temConflito) {
-        horarios.push(horario)
-      }
-    }
+    // Calcular slots disponíveis usando a biblioteca de scheduling
+    const horarios = calculateAvailableSlots(
+      targetDate,
+      servico.duracao_minutos,
+      workHours,
+      breaks,
+      daysOff,
+      appointments
+    )
 
     return NextResponse.json({ horarios })
   } catch (error) {
     console.error('Erro ao buscar horários:', error)
     return NextResponse.json(
-      { error: 'Erro ao buscar horários disponíveis' },
+      { error: 'E_FETCH_AVAILABILITY_FAILED', message: 'Erro ao buscar horários disponíveis' },
       { status: 500 }
     )
   }

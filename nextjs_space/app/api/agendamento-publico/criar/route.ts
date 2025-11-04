@@ -102,8 +102,8 @@ export async function POST(request: NextRequest) {
 
     if (conflito) {
       return NextResponse.json(
-        { error: 'Horário não está mais disponível' },
-        { status: 400 }
+        { error: 'E_CONFLICT_APPOINTMENT', message: 'Já existe agendamento neste horário para este profissional.' },
+        { status: 409 }
       )
     }
 
@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Erro ao criar agendamento:', error)
     return NextResponse.json(
-      { error: 'Erro ao criar agendamento' },
+      { error: 'E_CREATE_APPOINTMENT_FAILED', message: 'Erro ao criar agendamento' },
       { status: 500 }
     )
   }

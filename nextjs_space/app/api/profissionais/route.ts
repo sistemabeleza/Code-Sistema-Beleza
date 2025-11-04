@@ -60,15 +60,15 @@ export async function POST(request: NextRequest) {
 
     const data = await request.json()
 
-    // Validação básica
-    if (!data.nome || !data.telefone) {
+    // Validação básica - apenas nome é obrigatório
+    if (!data.nome || data.nome.trim() === '') {
       return NextResponse.json(
-        { error: 'Nome e telefone são obrigatórios' },
+        { error: 'E_PROFESSIONAL_NAME_REQUIRED', message: 'Informe o nome do profissional.' },
         { status: 400 }
       )
     }
 
-    // Se não houver work_hours, usa o padrão
+    // Se não houver work_hours, usa o padrão (Seg-Sáb 08:00-20:00)
     const workHours = data.work_hours || JSON.stringify(DEFAULT_WORK_HOURS)
     const breaks = data.breaks || JSON.stringify(DEFAULT_BREAKS)
     const daysOff = data.days_off || JSON.stringify([])
@@ -76,8 +76,8 @@ export async function POST(request: NextRequest) {
     // Prepara os dados do profissional
     const profissionalData: any = {
       salao_id: session.user.salao_id,
-      nome: data.nome,
-      telefone: data.telefone,
+      nome: data.nome.trim(),
+      telefone: data.telefone || '',
       email: data.email || null,
       cpf: data.cpf || null,
       especialidade: data.especialidade || null,
@@ -123,14 +123,20 @@ export async function POST(request: NextRequest) {
     
     // Verifica erros de unicidade
     if (error.code === 'P2002') {
+      const field = error.meta?.target?.[0]
+      let message = 'Já existe um profissional com este '
+      if (field === 'email') message += 'e-mail'
+      else if (field === 'cpf') message += 'CPF'
+      else message = 'Já existe um profissional com estas informações'
+      
       return NextResponse.json(
-        { error: 'Já existe um profissional com este e-mail ou CPF' },
+        { error: 'E_DUPLICATE_PROFESSIONAL', message },
         { status: 409 }
       )
     }
     
     return NextResponse.json(
-      { error: 'Erro ao criar profissional' },
+      { error: 'E_CREATE_PROFESSIONAL_FAILED', message: 'Erro ao criar profissional' },
       { status: 500 }
     )
   }
@@ -172,15 +178,23 @@ export async function PUT(request: NextRequest) {
       )
     }
 
+    // Validação básica
+    if (!data.nome || data.nome.trim() === '') {
+      return NextResponse.json(
+        { error: 'E_PROFESSIONAL_NAME_REQUIRED', message: 'Informe o nome do profissional.' },
+        { status: 400 }
+      )
+    }
+
     // Prepara os dados para atualização
     const updateData: any = {
-      nome: data.nome,
-      telefone: data.telefone,
+      nome: data.nome.trim(),
+      telefone: data.telefone || '',
       email: data.email || null,
       cpf: data.cpf || null,
       especialidade: data.especialidade || null,
       bio: data.bio || null,
-      comissao_percentual: data.comissao_percentual,
+      comissao_percentual: data.comissao_percentual || 0,
       status: data.status,
       foto: data.foto || null,
       data_contratacao: data.data_contratacao ? new Date(data.data_contratacao) : null
@@ -247,14 +261,20 @@ export async function PUT(request: NextRequest) {
     console.error('Erro ao atualizar profissional:', error)
     
     if (error.code === 'P2002') {
+      const field = error.meta?.target?.[0]
+      let message = 'Já existe um profissional com este '
+      if (field === 'email') message += 'e-mail'
+      else if (field === 'cpf') message += 'CPF'
+      else message = 'Já existe um profissional com estas informações'
+      
       return NextResponse.json(
-        { error: 'Já existe um profissional com este e-mail ou CPF' },
+        { error: 'E_DUPLICATE_PROFESSIONAL', message },
         { status: 409 }
       )
     }
     
     return NextResponse.json(
-      { error: 'Erro ao atualizar profissional' },
+      { error: 'E_UPDATE_PROFESSIONAL_FAILED', message: 'Erro ao atualizar profissional' },
       { status: 500 }
     )
   }
