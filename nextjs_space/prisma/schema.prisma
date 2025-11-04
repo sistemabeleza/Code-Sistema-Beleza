@@ -13,7 +13,8 @@ datasource db {
 model Salao {
   id                  String               @id @default(cuid())
   nome                String
-  cnpj                String?
+  document_type       DocumentType?        // CPF ou CNPJ
+  document            String?              // Documento (somente números)
   telefone            String?
   email               String?
   endereco            String?
@@ -24,6 +25,9 @@ model Salao {
   slug                String?              @unique  // Link personalizado para agendamento (ex: meusalao)
   descricao           String?              // Descrição do salão para o site público
   cor_tema            String?              @default("#3B82F6")
+  instagram_handle    String?              // @usuario ou usuario
+  whatsapp_number     String?              // Formato E.164 (+5527999999999)
+  timezone            String?              @default("America/Sao_Paulo")
   plano               PlanoSalao           @default(BASICO)
   status              StatusSalao          @default(ATIVO)
   data_criacao        DateTime             @default(now())
@@ -164,9 +168,13 @@ model Profissional {
   email                 String?
   cpf                   String?
   especialidade         String?
+  bio                   String?              // Biografia/descrição do profissional
   comissao_percentual   Decimal              @default(0) @db.Decimal(5,2)
   status                StatusProfissional   @default(ATIVO)
   foto                  String?              // URL da foto
+  work_hours            String?              // JSON com horários de trabalho por dia
+  breaks                String?              // JSON com pausas/intervalos
+  days_off              String?              // JSON com folgas/feriados
   data_contratacao      DateTime?
   data_cadastro         DateTime             @default(now())
   data_atualizacao      DateTime             @updatedAt
@@ -468,4 +476,9 @@ enum OrigemAgendamento {
   SITE
   WHATSAPP
   TELEFONE
+}
+
+enum DocumentType {
+  CPF
+  CNPJ
 }
