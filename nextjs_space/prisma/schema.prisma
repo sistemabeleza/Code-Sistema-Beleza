@@ -63,7 +63,7 @@ model User {
   tipo          TipoUsuario     @default(ADMIN)
   status        StatusUsuario   @default(ATIVO)
   telefone      String?
-  cpf           String?         @unique
+  cpf           String?
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -156,7 +156,6 @@ model Cliente {
   vendas              Venda[]
   fidelidade          FidelidadeCliente?
 
-  @@unique([salao_id, cpf])
   @@map("clientes")
 }
 
@@ -186,7 +185,6 @@ model Profissional {
   pagamentos            Pagamento[]
 
   @@unique([salao_id, email])
-  @@unique([salao_id, cpf])
   @@map("profissionais")
 }
 
