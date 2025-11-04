@@ -44,11 +44,18 @@ export default function HomePage() {
               <h1 className="text-2xl font-bold text-gray-800">Sistema Beleza</h1>
             </div>
             
-            <Link href="/auth/login">
-              <Button className="bg-blue-600 hover:bg-blue-700">
-                Acessar Sistema
-              </Button>
-            </Link>
+            <div className="flex items-center space-x-4">
+              <Link href="/auth/login">
+                <Button variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50">
+                  Entrar
+                </Button>
+              </Link>
+              <Link href="/auth/signup">
+                <Button className="bg-blue-600 hover:bg-blue-700">
+                  Criar Conta Grátis
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </header>
@@ -66,11 +73,18 @@ export default function HomePage() {
             vendas e relatórios do seu salão de beleza, barbearia ou clínica estética.
           </p>
 
-          <Link href="/auth/login">
-            <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-6">
-              Começar Agora
-            </Button>
-          </Link>
+          <div className="flex items-center justify-center space-x-4">
+            <Link href="/auth/signup">
+              <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-6">
+                Criar Conta Grátis
+              </Button>
+            </Link>
+            <Link href="/auth/login">
+              <Button size="lg" variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50 text-lg px-8 py-6">
+                Já tenho conta
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -180,12 +194,12 @@ export default function HomePage() {
             Pronto para Revolucionar seu Salão?
           </h3>
           <p className="text-xl text-blue-100 mb-8">
-            Sistema completo com dados de exemplo já configurados para você testar
+            Crie sua conta gratuita em segundos e comece a gerenciar seu salão hoje mesmo!
           </p>
           
-          <Link href="/auth/login">
+          <Link href="/auth/signup">
             <Button size="lg" variant="secondary" className="text-blue-600 hover:text-blue-700">
-              Acessar Sistema Agora
+              Começar Gratuitamente
             </Button>
           </Link>
         </div>

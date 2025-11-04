@@ -104,11 +104,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
         <div className="relative flex flex-col w-full max-w-xs bg-white">
           <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
-            <div className="flex items-center space-x-3">
-              <div className="bg-blue-600 p-2 rounded-lg">
-                <Scissors className="h-5 w-5 text-white" />
+            <div className="flex flex-col">
+              <div className="flex items-center space-x-2">
+                <div className="bg-blue-600 p-2 rounded-lg">
+                  <Scissors className="h-4 w-4 text-white" />
+                </div>
+                <span className="text-base font-bold text-gray-800">{session?.user.salao_nome || 'Sistema Beleza'}</span>
               </div>
-              <span className="text-lg font-semibold text-gray-800">Sistema Beleza</span>
+              <span className="text-xs text-gray-500 ml-10">Multi-Salão SaaS</span>
             </div>
             <Button
               variant="ghost"
@@ -144,13 +147,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
       {/* Desktop sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col bg-white border-r border-gray-200">
-        <div className="flex items-center h-16 px-6 border-b border-gray-200">
-          <div className="flex items-center space-x-3">
+        <div className="flex flex-col h-16 px-6 py-3 border-b border-gray-200 justify-center">
+          <div className="flex items-center space-x-2">
             <div className="bg-blue-600 p-2 rounded-lg">
               <Scissors className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-bold text-gray-800">Sistema Beleza</span>
+            <span className="text-lg font-bold text-gray-800">{session?.user.salao_nome || 'Sistema Beleza'}</span>
           </div>
+          <span className="text-xs text-gray-500 ml-11">Multi-Salão SaaS</span>
         </div>
         
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">

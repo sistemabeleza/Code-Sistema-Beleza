@@ -7,11 +7,25 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
-    const { firstName, lastName, email, password } = await request.json()
+    const body = await request.json()
+    
+    // Suporte para ambos os formatos (novo e legado para testes)
+    const nomeSalao = body.nomeSalao || (body.firstName && body.lastName ? `Salão ${body.firstName} ${body.lastName}` : null)
+    const nome = body.nome || (body.firstName && body.lastName ? `${body.firstName} ${body.lastName}` : null)
+    const email = body.email
+    const senha = body.senha || body.password
 
-    if (!firstName || !lastName || !email || !password) {
+    // Validações
+    if (!nomeSalao || !nome || !email || !senha) {
       return NextResponse.json(
         { error: 'Todos os campos são obrigatórios' },
+        { status: 400 }
+      )
+    }
+
+    if (senha.length < 6) {
+      return NextResponse.json(
+        { error: 'A senha deve ter pelo menos 6 caracteres' },
         { status: 400 }
       )
     }
@@ -23,36 +37,69 @@ export async function POST(request: NextRequest) {
 
     if (existingUser) {
       return NextResponse.json(
-        { error: 'Usuário já existe' },
+        { error: 'Este email já está cadastrado' },
         { status: 409 }
       )
     }
 
     // Hash da senha
-    const hashedPassword = await bcrypt.hash(password, 12)
+    const hashedPassword = await bcrypt.hash(senha, 12)
 
-    // Criar usuário
-    const user = await prisma.user.create({
-      data: {
-        name: `${firstName} ${lastName}`,
-        email,
-        tipo: 'ATENDENTE',
-        status: 'ATIVO'
-      }
+    // Criar salão e usuário em uma transação
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Criar o salão
+      const salao = await tx.salao.create({
+        data: {
+          nome: nomeSalao,
+          plano: 'BASICO',
+          status: 'ATIVO'
+        }
+      })
+
+      // 2. Criar configuração do salão
+      await tx.configuracaoSalao.create({
+        data: {
+          salao_id: salao.id,
+          configuracoes_json: JSON.stringify({
+            tempo_intervalo_agendamento: 30,
+            antecedencia_minima: 60,
+            pontos_fidelidade_real: 10
+          })
+        }
+      })
+
+      // 3. Criar usuário administrador vinculado ao salão
+      const user = await tx.user.create({
+        data: {
+          name: nome,
+          email,
+          password: hashedPassword,
+          salao_id: salao.id,
+          tipo: 'ADMIN',
+          status: 'ATIVO'
+        }
+      })
+
+      return { salao, user }
     })
 
     return NextResponse.json({
+      success: true,
       user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        tipo: user.tipo
+        id: result.user.id,
+        name: result.user.name,
+        email: result.user.email,
+        tipo: result.user.tipo
+      },
+      salao: {
+        id: result.salao.id,
+        nome: result.salao.nome
       }
     })
   } catch (error) {
     console.error('Erro no signup:', error)
     return NextResponse.json(
-      { error: 'Erro interno do servidor' },
+      { error: 'Erro ao criar conta. Tente novamente.' },
       { status: 500 }
     )
   }

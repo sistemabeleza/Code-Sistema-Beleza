@@ -1,0 +1,13 @@
+{
+  "login_params": {
+    "email": "john@doe.com",
+    "password": "johndoe123"
+  },
+  "signup_endpoint": "/api/signup",
+  "signup_params": {
+    "nomeSalao": "Meu Salão Teste",
+    "nome": "Test User",
+    "email": "test@example.com",
+    "senha": "test123456"
+  }
+}

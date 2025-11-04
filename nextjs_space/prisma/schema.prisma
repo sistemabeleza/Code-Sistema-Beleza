@@ -9,6 +9,35 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
+// Modelo principal de Multi-tenancy
+model Salao {
+  id                  String               @id @default(cuid())
+  nome                String
+  cnpj                String?
+  telefone            String?
+  email               String?
+  endereco            String?
+  horario_funcionamento String?
+  logo                String?              // URL do logo
+  cor_tema            String?              @default("#3B82F6")
+  plano               PlanoSalao           @default(BASICO)
+  status              StatusSalao          @default(ATIVO)
+  data_criacao        DateTime             @default(now())
+  data_atualizacao    DateTime             @updatedAt
+
+  // Relacionamentos
+  usuarios            User[]
+  clientes            Cliente[]
+  profissionais       Profissional[]
+  servicos            Servico[]
+  produtos            Produto[]
+  agendamentos        Agendamento[]
+  vendas              Venda[]
+  configuracao        ConfiguracaoSalao?
+
+  @@map("saloes")
+}
+
 // NextAuth.js Models
 model User {
   id            String          @id @default(cuid())
@@ -16,18 +45,23 @@ model User {
   email         String          @unique
   emailVerified DateTime?
   image         String?
+  password      String?         // Para autenticação por senha
   accounts      Account[]
   sessions      Session[]
   authenticator Authenticator[]
 
   // Sistema específico
-  tipo          TipoUsuario     @default(ATENDENTE)
+  salao_id      String
+  tipo          TipoUsuario     @default(ADMIN)
   status        StatusUsuario   @default(ATIVO)
   telefone      String?
   cpf           String?         @unique
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  salao         Salao           @relation(fields: [salao_id], references: [id], onDelete: Cascade)
 
   @@map("users")
 }
@@ -95,10 +129,11 @@ model Authenticator {
 
 model Cliente {
   id                  String               @id @default(cuid())
+  salao_id            String
   nome                String
   telefone            String
   email               String?
-  cpf                 String?              @unique
+  cpf                 String?
   data_nascimento     DateTime?
   endereco            String?
   observacoes         String?
@@ -108,19 +143,22 @@ model Cliente {
   data_atualizacao    DateTime             @updatedAt
 
   // Relacionamentos
+  salao               Salao                @relation(fields: [salao_id], references: [id], onDelete: Cascade)
   agendamentos        Agendamento[]
   vendas              Venda[]
   fidelidade          FidelidadeCliente?
 
+  @@unique([salao_id, cpf])
   @@map("clientes")
 }
 
 model Profissional {
   id                    String               @id @default(cuid())
+  salao_id              String
   nome                  String
   telefone              String
-  email                 String?              @unique
-  cpf                   String?              @unique
+  email                 String?
+  cpf                   String?
   especialidade         String?
   comissao_percentual   Decimal              @default(0) @db.Decimal(5,2)
   status                StatusProfissional   @default(ATIVO)
@@ -130,15 +168,19 @@ model Profissional {
   data_atualizacao      DateTime             @updatedAt
 
   // Relacionamentos
+  salao                 Salao                @relation(fields: [salao_id], references: [id], onDelete: Cascade)
   agendamentos          Agendamento[]
   servicos              ProfissionalServico[]
   pagamentos            Pagamento[]
 
+  @@unique([salao_id, email])
+  @@unique([salao_id, cpf])
   @@map("profissionais")
 }
 
 model Servico {
   id                  String               @id @default(cuid())
+  salao_id            String
   nome                String
   descricao           String?
   preco               Decimal              @db.Decimal(10,2)
@@ -150,6 +192,7 @@ model Servico {
   data_atualizacao    DateTime             @updatedAt
 
   // Relacionamentos
+  salao               Salao                @relation(fields: [salao_id], references: [id], onDelete: Cascade)
   agendamentos        Agendamento[]
   profissionais       ProfissionalServico[]
   itens_venda         ItemVenda[]
@@ -174,6 +217,7 @@ model ProfissionalServico {
 
 model Agendamento {
   id                  String               @id @default(cuid())
+  salao_id            String
   cliente_id          String
   profissional_id     String
   servico_id          String
@@ -188,6 +232,7 @@ model Agendamento {
   data_atualizacao    DateTime             @updatedAt
 
   // Relacionamentos
+  salao               Salao                @relation(fields: [salao_id], references: [id], onDelete: Cascade)
   cliente             Cliente              @relation(fields: [cliente_id], references: [id], onDelete: Cascade)
   profissional        Profissional         @relation(fields: [profissional_id], references: [id], onDelete: Cascade)
   servico             Servico              @relation(fields: [servico_id], references: [id], onDelete: Cascade)
@@ -222,9 +267,10 @@ model Pagamento {
 
 model Produto {
   id                  String               @id @default(cuid())
+  salao_id            String
   nome                String
   descricao           String?
-  codigo_barras       String?              @unique
+  codigo_barras       String?
   preco_custo         Decimal              @db.Decimal(10,2)
   preco_venda         Decimal              @db.Decimal(10,2)
   quantidade_estoque  Int                  @default(0)
@@ -238,9 +284,11 @@ model Produto {
   data_atualizacao    DateTime             @updatedAt
 
   // Relacionamentos
+  salao               Salao                @relation(fields: [salao_id], references: [id], onDelete: Cascade)
   movimentacoes       MovimentacaoEstoque[]
   itens_venda         ItemVenda[]
 
+  @@unique([salao_id, codigo_barras])
   @@map("produtos")
 }
 
@@ -262,8 +310,9 @@ model MovimentacaoEstoque {
 
 model Venda {
   id                  String               @id @default(cuid())
+  salao_id            String
   cliente_id          String?
-  numero_venda        String               @unique
+  numero_venda        String
   valor_total         Decimal              @db.Decimal(10,2)
   desconto            Decimal              @default(0) @db.Decimal(10,2)
   valor_final         Decimal              @db.Decimal(10,2)
@@ -272,10 +321,12 @@ model Venda {
   data_atualizacao    DateTime             @updatedAt
 
   // Relacionamentos
+  salao               Salao                @relation(fields: [salao_id], references: [id], onDelete: Cascade)
   cliente             Cliente?             @relation(fields: [cliente_id], references: [id])
   itens               ItemVenda[]
   pagamento           Pagamento?
 
+  @@unique([salao_id, numero_venda])
   @@map("vendas")
 }
 
@@ -315,16 +366,12 @@ model FidelidadeCliente {
 
 model ConfiguracaoSalao {
   id                  String               @id @default(cuid())
-  nome_salao          String
-  cnpj                String?
-  telefone            String?
-  email               String?
-  endereco            String?
-  horario_funcionamento String?
-  logo                String?              // URL do logo
-  cor_tema            String?              @default("#3B82F6")
+  salao_id            String               @unique
   configuracoes_json  String?              // Configurações extras em JSON
   data_atualizacao    DateTime             @updatedAt
+
+  // Relacionamentos
+  salao               Salao                @relation(fields: [salao_id], references: [id], onDelete: Cascade)
 
   @@map("configuracoes_salao")
 }
@@ -395,4 +442,18 @@ enum TipoMovimentacao {
   SAIDA
   AJUSTE
   PERDA
+}
+
+enum PlanoSalao {
+  BASICO
+  PROFISSIONAL
+  PREMIUM
+  ENTERPRISE
+}
+
+enum StatusSalao {
+  ATIVO
+  INATIVO
+  SUSPENSO
+  TRIAL
 }

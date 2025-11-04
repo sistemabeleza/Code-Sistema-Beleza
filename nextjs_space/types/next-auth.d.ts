@@ -10,6 +10,8 @@ declare module 'next-auth' {
       image?: string | null
       tipo: 'ADMIN' | 'GERENTE' | 'ATENDENTE'
       status: 'ATIVO' | 'INATIVO' | 'SUSPENSO'
+      salao_id: string
+      salao_nome: string
     }
   }
 
@@ -20,6 +22,8 @@ declare module 'next-auth' {
     image?: string | null
     tipo: 'ADMIN' | 'GERENTE' | 'ATENDENTE'
     status: 'ATIVO' | 'INATIVO' | 'SUSPENSO'
+    salao_id: string
+    salao_nome: string
   }
 }
 
@@ -27,5 +31,7 @@ declare module 'next-auth/jwt' {
   interface JWT {
     tipo: 'ADMIN' | 'GERENTE' | 'ATENDENTE'
     status: 'ATIVO' | 'INATIVO' | 'SUSPENSO'
+    salao_id: string
+    salao_nome: string
   }
 }

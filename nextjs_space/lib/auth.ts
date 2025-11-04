@@ -20,25 +20,26 @@ export const authOptions: NextAuthOptions = {
         }
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
+          where: { email: credentials.email },
+          include: {
+            salao: true
+          }
         })
 
-        if (!user) {
+        if (!user || !user.password) {
           return null
         }
 
-        // Para o usuário padrão john@doe.com
-        if (user.email === 'john@doe.com') {
-          const isPasswordValid = credentials.password === 'johndoe123'
-          if (!isPasswordValid) {
-            return null
-          }
-        } else {
-          // Para outros usuários, verificar senha hash
-          const isPasswordValid = await bcrypt.compare(credentials.password, 'password123')
-          if (!isPasswordValid) {
-            return null
-          }
+        // Verificar senha com bcrypt
+        const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
+        
+        if (!isPasswordValid) {
+          return null
+        }
+
+        // Verificar se usuário está ativo
+        if (user.status !== 'ATIVO') {
+          return null
         }
 
         return {
@@ -47,7 +48,9 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           image: user.image,
           tipo: user.tipo,
-          status: user.status
+          status: user.status,
+          salao_id: user.salao_id,
+          salao_nome: user.salao?.nome || ''
         }
       }
     })
@@ -60,6 +63,8 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.tipo = (user as any).tipo
         token.status = (user as any).status
+        token.salao_id = (user as any).salao_id
+        token.salao_nome = (user as any).salao_nome
       }
       return token
     },
@@ -68,6 +73,8 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.sub || ''
         session.user.tipo = token.tipo
         session.user.status = token.status
+        session.user.salao_id = token.salao_id
+        session.user.salao_nome = token.salao_nome
       }
       return session
     }
