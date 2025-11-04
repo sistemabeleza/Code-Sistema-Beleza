@@ -19,6 +19,10 @@ model Salao {
   endereco            String?
   horario_funcionamento String?
   logo                String?              // URL do logo
+  foto_1              String?              // URL da foto 1 do salão
+  foto_2              String?              // URL da foto 2 do salão
+  slug                String?              @unique  // Link personalizado para agendamento (ex: meusalao)
+  descricao           String?              // Descrição do salão para o site público
   cor_tema            String?              @default("#3B82F6")
   plano               PlanoSalao           @default(BASICO)
   status              StatusSalao          @default(ATIVO)
@@ -225,6 +229,7 @@ model Agendamento {
   hora_inicio         DateTime
   hora_fim            DateTime
   status              StatusAgendamento    @default(AGENDADO)
+  origem              OrigemAgendamento    @default(MANUAL)  // Se veio do site ou foi manual
   observacoes         String?
   valor_cobrado       Decimal?             @db.Decimal(10,2)
   desconto            Decimal?             @default(0) @db.Decimal(10,2)
@@ -456,4 +461,11 @@ enum StatusSalao {
   INATIVO
   SUSPENSO
   TRIAL
+}
+
+enum OrigemAgendamento {
+  MANUAL
+  SITE
+  WHATSAPP
+  TELEFONE
 }

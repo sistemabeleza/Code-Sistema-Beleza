@@ -202,64 +202,27 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 </span>
               </div>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center space-x-3 hover:bg-gray-100">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={session?.user?.image || undefined} />
-                      <AvatarFallback>
-                        {getUserInitials(session?.user?.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="hidden sm:block text-left">
-                      <p className="text-sm font-medium text-gray-700">
-                        {session?.user?.name || 'Usuário'}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {session?.user?.email}
-                      </p>
-                    </div>
-                  </Button>
-                </DropdownMenuTrigger>
-                
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium">
-                        {session?.user?.name || 'Usuário'}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {session?.user?.email}
-                      </p>
-                      <Badge
-                        variant="secondary"
-                        className={`text-xs w-fit ${getTipoUsuarioColor(session?.user?.tipo || '')}`}
-                      >
-                        {getTipoUsuarioLabel(session?.user?.tipo || '')}
-                      </Badge>
-                    </div>
-                  </DropdownMenuLabel>
-                  
-                  <DropdownMenuSeparator />
-                  
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard/configuracoes" className="flex items-center">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Configurações
-                    </Link>
-                  </DropdownMenuItem>
-                  
-                  <DropdownMenuSeparator />
-                  
-                  <DropdownMenuItem
-                    onClick={handleLogout}
-                    className="text-red-600 focus:text-red-600"
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sair
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Button
+                onClick={handleLogout}
+                variant="ghost"
+                className="flex items-center space-x-3 hover:bg-gray-100"
+                title="Sair"
+              >
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={session?.user?.image || undefined} />
+                  <AvatarFallback>
+                    {getUserInitials(session?.user?.name)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="hidden sm:block text-left">
+                  <p className="text-sm font-medium text-gray-700">
+                    {session?.user?.name || 'Usuário'}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {session?.user?.email}
+                  </p>
+                </div>
+              </Button>
             </div>
           </div>
         </header>

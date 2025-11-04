@@ -1,10 +1,7 @@
-
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Settings, Save } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import ConfiguracoesForm from './_components/ConfiguracoesForm'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,39 +14,12 @@ export default async function ConfiguracoesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Configurações</h1>
-          <p className="text-gray-600">Configure as preferências do sistema</p>
-        </div>
-        <Button disabled className="opacity-50 cursor-not-allowed">
-          <Save className="mr-2 h-4 w-4" />
-          Em Desenvolvimento
-        </Button>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Configurações do Salão</h1>
+        <p className="text-gray-600">Configure os dados do seu salão e personalize o link de agendamento</p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Settings className="mr-2 h-5 w-5" />
-            Configurações do Sistema
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-12">
-            <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              Configurações em Desenvolvimento
-            </h3>
-            <p className="text-gray-500 mb-4">
-              Esta funcionalidade está sendo desenvolvida e estará disponível em breve.
-            </p>
-            <p className="text-sm text-gray-400">
-              Aqui você poderá configurar dados do salão, usuários, permissões e preferências do sistema.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <ConfiguracoesForm />
     </div>
   )
 }
