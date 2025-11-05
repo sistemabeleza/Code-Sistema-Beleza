@@ -7,7 +7,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Edit, User, Phone } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Plus, Edit, User, Phone, Percent, DollarSign } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface Profissional {
@@ -15,6 +16,8 @@ interface Profissional {
   nome: string
   telefone?: string
   status: string
+  commission_type?: string | null
+  commission_value?: number | null
 }
 
 export default function ProfissionaisPage() {
@@ -26,7 +29,9 @@ export default function ProfissionaisPage() {
   
   const [formData, setFormData] = useState({
     nome: '',
-    telefone: ''
+    telefone: '',
+    commission_type: '' as string,
+    commission_value: ''
   })
 
   useEffect(() => {
@@ -55,7 +60,9 @@ export default function ProfissionaisPage() {
     setEditando(null)
     setFormData({
       nome: '',
-      telefone: ''
+      telefone: '',
+      commission_type: '',
+      commission_value: ''
     })
     setDialogOpen(true)
   }
@@ -64,7 +71,9 @@ export default function ProfissionaisPage() {
     setEditando(prof)
     setFormData({
       nome: prof.nome,
-      telefone: prof.telefone || ''
+      telefone: prof.telefone || '',
+      commission_type: prof.commission_type || '',
+      commission_value: prof.commission_value ? String(prof.commission_value) : ''
     })
     setDialogOpen(true)
   }
@@ -76,12 +85,34 @@ export default function ProfissionaisPage() {
       return
     }
 
+    // Validação de comissão
+    if (formData.commission_type && !formData.commission_value) {
+      toast.error('Informe o valor da comissão')
+      return
+    }
+
+    if (formData.commission_value && !formData.commission_type) {
+      toast.error('Selecione o tipo de comissão')
+      return
+    }
+
+    // Validar percentual
+    if (formData.commission_type === 'PERCENTAGE' && formData.commission_value) {
+      const valor = parseFloat(formData.commission_value)
+      if (valor < 0 || valor > 100) {
+        toast.error('A comissão em porcentagem deve estar entre 0% e 100%')
+        return
+      }
+    }
+
     try {
       setSalvando(true)
       
       const body = {
         nome: formData.nome.trim(),
-        telefone: formData.telefone.trim() || null
+        telefone: formData.telefone.trim() || null,
+        commission_type: (formData.commission_type && formData.commission_type !== 'none') ? formData.commission_type : null,
+        commission_value: (formData.commission_value && formData.commission_type !== 'none') ? formData.commission_value : null
       }
 
       const url = '/api/profissionais'
@@ -217,6 +248,64 @@ export default function ProfissionaisPage() {
                 className="text-base"
               />
               <p className="text-xs text-gray-500">Campo opcional</p>
+            </div>
+
+            <div className="border-t pt-4 mt-4">
+              <h3 className="text-base font-semibold mb-4">Comissão (Opcional)</h3>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="commission_type" className="text-sm font-medium">
+                    Tipo de Comissão
+                  </Label>
+                  <Select
+                    value={formData.commission_type}
+                    onValueChange={(value) => setFormData({ ...formData, commission_type: value })}
+                  >
+                    <SelectTrigger id="commission_type">
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sem comissão</SelectItem>
+                      <SelectItem value="PERCENTAGE">Porcentagem (%)</SelectItem>
+                      <SelectItem value="FIXED">Valor Fixo (R$)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="commission_value" className="text-sm font-medium">
+                    Valor
+                  </Label>
+                  <div className="relative">
+                    {formData.commission_type === 'PERCENTAGE' && (
+                      <Percent className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                    )}
+                    {formData.commission_type === 'FIXED' && (
+                      <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                    )}
+                    <Input
+                      id="commission_value"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max={formData.commission_type === 'PERCENTAGE' ? '100' : undefined}
+                      value={formData.commission_value}
+                      onChange={(e) => setFormData({ ...formData, commission_value: e.target.value })}
+                      placeholder={formData.commission_type === 'PERCENTAGE' ? '0 - 100' : '0.00'}
+                      className={formData.commission_type ? 'pl-10' : ''}
+                      disabled={!formData.commission_type || formData.commission_type === 'none'}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    {formData.commission_type === 'PERCENTAGE' 
+                      ? 'Porcentagem do valor do serviço'
+                      : formData.commission_type === 'FIXED'
+                      ? 'Valor fixo por serviço concluído'
+                      : 'Selecione um tipo de comissão'}
+                  </p>
+                </div>
+              </div>
             </div>
 
             <p className="text-sm text-gray-500">

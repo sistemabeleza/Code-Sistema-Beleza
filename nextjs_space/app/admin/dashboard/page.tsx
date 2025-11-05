@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Shield, Plus, Edit, Trash2, Key, LogOut, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
@@ -49,7 +50,7 @@ export default function AdminDashboardPage() {
     name: '',
     email: '',
     password: '',
-    tipo: 'USUARIO'
+    tipo: 'ADMIN'
   })
 
   const [editUsuario, setEditUsuario] = useState({
@@ -131,7 +132,7 @@ export default function AdminDashboardPage() {
       if (response.ok) {
         toast.success('Usuário criado com sucesso!')
         setModalAberto(false)
-        setNovoUsuario({ name: '', email: '', password: '', tipo: 'USUARIO' })
+        setNovoUsuario({ name: '', email: '', password: '', tipo: 'ADMIN' })
         await carregarUsuarios()
       } else {
         const data = await response.json()
@@ -467,6 +468,22 @@ export default function AdminDashboardPage() {
                 placeholder="Senha do usuário"
               />
             </div>
+            <div>
+              <Label htmlFor="tipo">Tipo de Usuário</Label>
+              <Select
+                value={novoUsuario.tipo}
+                onValueChange={(value) => setNovoUsuario({ ...novoUsuario, tipo: value })}
+              >
+                <SelectTrigger id="tipo">
+                  <SelectValue placeholder="Selecione o tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ADMIN">Administrador</SelectItem>
+                  <SelectItem value="GERENTE">Gerente</SelectItem>
+                  <SelectItem value="ATENDENTE">Atendente</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setModalAberto(false)}>
@@ -502,6 +519,22 @@ export default function AdminDashboardPage() {
                 value={editUsuario.email}
                 onChange={(e) => setEditUsuario({ ...editUsuario, email: e.target.value })}
               />
+            </div>
+            <div>
+              <Label htmlFor="edit-tipo">Tipo de Usuário</Label>
+              <Select
+                value={editUsuario.tipo}
+                onValueChange={(value) => setEditUsuario({ ...editUsuario, tipo: value })}
+              >
+                <SelectTrigger id="edit-tipo">
+                  <SelectValue placeholder="Selecione o tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ADMIN">Administrador</SelectItem>
+                  <SelectItem value="GERENTE">Gerente</SelectItem>
+                  <SelectItem value="ATENDENTE">Atendente</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>

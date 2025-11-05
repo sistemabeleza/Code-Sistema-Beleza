@@ -71,7 +71,9 @@ export async function POST(request: NextRequest) {
         telefone: data.telefone || null,
         foto: data.foto || null,
         status: 'ATIVO',
-        work_hours: typeof workHours === 'string' ? workHours : JSON.stringify(workHours)
+        work_hours: typeof workHours === 'string' ? workHours : JSON.stringify(workHours),
+        commission_type: data.commission_type || null,
+        commission_value: data.commission_value ? parseFloat(data.commission_value) : null
       }
     })
 
@@ -135,7 +137,9 @@ export async function PUT(request: NextRequest) {
         nome: data.nome.trim(),
         telefone: data.telefone || null,
         foto: data.foto || null,
-        status: data.status || 'ATIVO'
+        status: data.status || 'ATIVO',
+        commission_type: data.commission_type || null,
+        commission_value: data.commission_value ? parseFloat(data.commission_value) : null
       }
     })
 

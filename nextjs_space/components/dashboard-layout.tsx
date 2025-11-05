@@ -20,7 +20,8 @@ import {
   Menu,
   X,
   Bell,
-  ExternalLink
+  ExternalLink,
+  Percent
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -47,6 +48,7 @@ const navigation = [
   { name: 'Produtos', href: '/dashboard/produtos', icon: Package },
   { name: 'Financeiro', href: '/dashboard/financeiro', icon: CreditCard },
   { name: 'Relatórios', href: '/dashboard/relatorios', icon: BarChart3 },
+  { name: 'Comissões', href: '/dashboard/relatorios/comissoes', icon: Percent },
   { name: 'Configurações', href: '/dashboard/configuracoes', icon: Settings },
 ]
 

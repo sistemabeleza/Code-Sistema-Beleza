@@ -169,6 +169,8 @@ model Profissional {
   foto                  String?              // URL da foto
   status                StatusProfissional   @default(ATIVO)
   work_hours            String?              // JSON com horários de trabalho por dia
+  commission_type       CommissionType?      // Tipo de comissão (porcentagem ou valor fixo)
+  commission_value      Decimal?             @db.Decimal(10,2) // Valor da comissão
   data_cadastro         DateTime             @default(now())
   data_atualizacao      DateTime             @updatedAt
 
@@ -452,6 +454,11 @@ enum OrigemAgendamento {
 enum DocumentType {
   CPF
   CNPJ
+}
+
+enum CommissionType {
+  PERCENTAGE
+  FIXED
 }
 
 enum TipoLancamento {
