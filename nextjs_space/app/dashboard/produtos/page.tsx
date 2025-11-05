@@ -2,55 +2,33 @@
 
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Package, Plus, Edit, Trash2, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react'
+import { Package, Plus, Edit, Trash2, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 
 interface Produto {
   id: string
   nome: string
-  descricao: string | null
-  codigo_barras: string | null
   preco_custo: number
   preco_venda: number
   quantidade_estoque: number
   estoque_minimo: number
-  categoria: string | null
-  marca: string | null
-  fornecedor: string | null
-  status: string
 }
 
 export default function ProdutosPage() {
   const [produtos, setProdutos] = useState<Produto[]>([])
   const [loading, setLoading] = useState(true)
   const [modalAberto, setModalAberto] = useState(false)
-  const [modalMovimentacao, setModalMovimentacao] = useState(false)
   const [produtoSelecionado, setProdutoSelecionado] = useState<Produto | null>(null)
   const [formData, setFormData] = useState({
     nome: '',
-    descricao: '',
-    codigo_barras: '',
     preco_custo: '',
     preco_venda: '',
-    quantidade_estoque: '0',
-    estoque_minimo: '5',
-    categoria: '',
-    marca: '',
-    fornecedor: '',
-    status: 'ATIVO',
-  })
-  const [movimentacaoData, setMovimentacaoData] = useState({
-    tipo: 'ENTRADA',
-    quantidade: '',
-    valor_unitario: '',
-    motivo: '',
+    quantidade_estoque: '',
+    estoque_minimo: '',
   })
 
   useEffect(() => {
@@ -74,45 +52,22 @@ export default function ProdutosPage() {
       setProdutoSelecionado(produto)
       setFormData({
         nome: produto.nome,
-        descricao: produto.descricao || '',
-        codigo_barras: produto.codigo_barras || '',
         preco_custo: produto.preco_custo.toString(),
         preco_venda: produto.preco_venda.toString(),
         quantidade_estoque: produto.quantidade_estoque.toString(),
         estoque_minimo: produto.estoque_minimo.toString(),
-        categoria: produto.categoria || '',
-        marca: produto.marca || '',
-        fornecedor: produto.fornecedor || '',
-        status: produto.status,
       })
     } else {
       setProdutoSelecionado(null)
       setFormData({
         nome: '',
-        descricao: '',
-        codigo_barras: '',
         preco_custo: '',
         preco_venda: '',
-        quantidade_estoque: '0',
-        estoque_minimo: '5',
-        categoria: '',
-        marca: '',
-        fornecedor: '',
-        status: 'ATIVO',
+        quantidade_estoque: '',
+        estoque_minimo: '',
       })
     }
     setModalAberto(true)
-  }
-
-  const abrirModalMovimentacao = (produto: Produto) => {
-    setProdutoSelecionado(produto)
-    setMovimentacaoData({
-      tipo: 'ENTRADA',
-      quantidade: '',
-      valor_unitario: produto.preco_custo.toString(),
-      motivo: '',
-    })
-    setModalMovimentacao(true)
   }
 
   const salvarProduto = async () => {
@@ -138,31 +93,6 @@ export default function ProdutosPage() {
     }
   }
 
-  const salvarMovimentacao = async () => {
-    if (!produtoSelecionado) return
-
-    try {
-      const response = await fetch('/api/produtos/movimentacao', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          produto_id: produtoSelecionado.id,
-          ...movimentacaoData,
-        }),
-      })
-
-      if (response.ok) {
-        toast.success('Movimentação registrada!')
-        setModalMovimentacao(false)
-        carregarProdutos()
-      } else {
-        toast.error('Erro ao registrar movimentação')
-      }
-    } catch (error) {
-      toast.error('Erro ao registrar movimentação')
-    }
-  }
-
   const excluirProduto = async (id: string) => {
     if (!confirm('Deseja realmente excluir este produto?')) return
 
@@ -179,7 +109,7 @@ export default function ProdutosPage() {
     }
   }
 
-  const produtosEstoqueBaixo = produtos.filter(p => p.quantidade_estoque <= p.estoque_minimo && p.status === 'ATIVO')
+  const produtosEstoqueBaixo = produtos.filter(p => p.quantidade_estoque <= p.estoque_minimo)
 
   if (loading) {
     return <div className="flex items-center justify-center py-8">Carregando...</div>
@@ -219,15 +149,7 @@ export default function ProdutosPage() {
           <Card key={produto.id} className={produto.quantidade_estoque <= produto.estoque_minimo ? 'border-orange-300' : ''}>
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <CardTitle className="text-lg">{produto.nome}</CardTitle>
-                  {produto.categoria && (
-                    <Badge variant="outline" className="mt-1">{produto.categoria}</Badge>
-                  )}
-                </div>
-                <Badge variant={produto.status === 'ATIVO' ? 'default' : 'secondary'}>
-                  {produto.status}
-                </Badge>
+                <CardTitle className="text-lg">{produto.nome}</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -242,40 +164,26 @@ export default function ProdutosPage() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Mínimo</p>
+                  <p className="text-gray-500">Estoque Mínimo</p>
                   <p className="font-semibold">{produto.estoque_minimo}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Custo</p>
+                  <p className="text-gray-500">Valor de Compra</p>
                   <p className="font-semibold text-red-600">
                     R$ {Number(produto.preco_custo).toFixed(2)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Venda</p>
+                  <p className="text-gray-500">Valor de Venda</p>
                   <p className="font-semibold text-green-600">
                     R$ {Number(produto.preco_venda).toFixed(2)}
                   </p>
                 </div>
               </div>
-              {produto.marca && (
-                <p className="text-xs text-gray-500">Marca: {produto.marca}</p>
-              )}
-              {produto.codigo_barras && (
-                <p className="text-xs text-gray-500">Cód: {produto.codigo_barras}</p>
-              )}
               <div className="flex gap-2 pt-2">
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="flex-1"
-                  onClick={() => abrirModalMovimentacao(produto)}
-                >
-                  <TrendingUp className="mr-1 h-3 w-3" />
-                  Movimentar
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => abrirModal(produto)}>
-                  <Edit className="h-3 w-3" />
+                <Button size="sm" variant="outline" className="flex-1" onClick={() => abrirModal(produto)}>
+                  <Edit className="mr-1 h-3 w-3" />
+                  Editar
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => excluirProduto(produto.id)}>
                   <Trash2 className="h-3 w-3" />
@@ -306,68 +214,24 @@ export default function ProdutosPage() {
 
       {/* Modal de Produto */}
       <Dialog open={modalAberto} onOpenChange={setModalAberto}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>
               {produtoSelecionado ? 'Editar Produto' : 'Novo Produto'}
             </DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Nome *</Label>
-                <Input
-                  value={formData.nome}
-                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                  placeholder="Nome do produto"
-                />
-              </div>
-              <div>
-                <Label>Código de Barras</Label>
-                <Input
-                  value={formData.codigo_barras}
-                  onChange={(e) => setFormData({ ...formData, codigo_barras: e.target.value })}
-                  placeholder="Código"
-                />
-              </div>
-            </div>
             <div>
-              <Label>Descrição</Label>
-              <Textarea
-                value={formData.descricao}
-                onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-                placeholder="Descrição do produto"
+              <Label>Nome do Produto *</Label>
+              <Input
+                value={formData.nome}
+                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                placeholder="Nome do produto"
               />
             </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <Label>Categoria</Label>
-                <Input
-                  value={formData.categoria}
-                  onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
-                  placeholder="Ex: Cosméticos"
-                />
-              </div>
-              <div>
-                <Label>Marca</Label>
-                <Input
-                  value={formData.marca}
-                  onChange={(e) => setFormData({ ...formData, marca: e.target.value })}
-                  placeholder="Marca"
-                />
-              </div>
-              <div>
-                <Label>Fornecedor</Label>
-                <Input
-                  value={formData.fornecedor}
-                  onChange={(e) => setFormData({ ...formData, fornecedor: e.target.value })}
-                  placeholder="Fornecedor"
-                />
-              </div>
-            </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Preço de Custo *</Label>
+                <Label>Valor de Compra *</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -377,7 +241,7 @@ export default function ProdutosPage() {
                 />
               </div>
               <div>
-                <Label>Preço de Venda *</Label>
+                <Label>Valor de Venda *</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -387,40 +251,24 @@ export default function ProdutosPage() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Qtd. Estoque {!produtoSelecionado && '*'}</Label>
+                <Label>Estoque *</Label>
                 <Input
                   type="number"
                   value={formData.quantidade_estoque}
                   onChange={(e) => setFormData({ ...formData, quantidade_estoque: e.target.value })}
-                  disabled={!!produtoSelecionado}
                   placeholder="0"
                 />
-                {produtoSelecionado && (
-                  <p className="text-xs text-gray-500 mt-1">Use Movimentação para alterar</p>
-                )}
               </div>
               <div>
-                <Label>Estoque Mínimo *</Label>
+                <Label>Alerta de Estoque Baixo *</Label>
                 <Input
                   type="number"
                   value={formData.estoque_minimo}
                   onChange={(e) => setFormData({ ...formData, estoque_minimo: e.target.value })}
                   placeholder="5"
                 />
-              </div>
-              <div>
-                <Label>Status</Label>
-                <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ATIVO">Ativo</SelectItem>
-                    <SelectItem value="INATIVO">Inativo</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </div>
           </div>
@@ -430,86 +278,6 @@ export default function ProdutosPage() {
             </Button>
             <Button onClick={salvarProduto}>
               Salvar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal de Movimentação */}
-      <Dialog open={modalMovimentacao} onOpenChange={setModalMovimentacao}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Movimentação de Estoque</DialogTitle>
-            {produtoSelecionado && (
-              <p className="text-sm text-gray-500">
-                {produtoSelecionado.nome} - Estoque atual: {produtoSelecionado.quantidade_estoque}
-              </p>
-            )}
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div>
-              <Label>Tipo de Movimentação *</Label>
-              <Select
-                value={movimentacaoData.tipo}
-                onValueChange={(value) => setMovimentacaoData({ ...movimentacaoData, tipo: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ENTRADA">
-                    <span className="flex items-center">
-                      <TrendingUp className="mr-2 h-4 w-4 text-green-600" />
-                      Entrada
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="SAIDA">
-                    <span className="flex items-center">
-                      <TrendingDown className="mr-2 h-4 w-4 text-red-600" />
-                      Saída
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="AJUSTE">Ajuste</SelectItem>
-                  <SelectItem value="PERDA">Perda</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Quantidade *</Label>
-                <Input
-                  type="number"
-                  value={movimentacaoData.quantidade}
-                  onChange={(e) => setMovimentacaoData({ ...movimentacaoData, quantidade: e.target.value })}
-                  placeholder="0"
-                />
-              </div>
-              <div>
-                <Label>Valor Unitário</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={movimentacaoData.valor_unitario}
-                  onChange={(e) => setMovimentacaoData({ ...movimentacaoData, valor_unitario: e.target.value })}
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
-            <div>
-              <Label>Motivo *</Label>
-              <Textarea
-                value={movimentacaoData.motivo}
-                onChange={(e) => setMovimentacaoData({ ...movimentacaoData, motivo: e.target.value })}
-                placeholder="Descreva o motivo da movimentação"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setModalMovimentacao(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={salvarMovimentacao}>
-              Registrar
             </Button>
           </DialogFooter>
         </DialogContent>

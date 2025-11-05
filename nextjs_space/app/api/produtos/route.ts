@@ -42,31 +42,12 @@ export async function POST(request: NextRequest) {
       data: {
         salao_id: session.user.salao_id,
         nome: data.nome,
-        descricao: data.descricao,
-        codigo_barras: data.codigo_barras,
         preco_custo: parseFloat(data.preco_custo),
         preco_venda: parseFloat(data.preco_venda),
         quantidade_estoque: parseInt(data.quantidade_estoque) || 0,
-        estoque_minimo: parseInt(data.estoque_minimo) || 5,
-        categoria: data.categoria,
-        marca: data.marca,
-        fornecedor: data.fornecedor,
-        status: data.status || 'ATIVO',
+        estoque_minimo: parseInt(data.estoque_minimo) || 0,
       },
     })
-
-    // Registrar movimentação de estoque inicial
-    if (parseInt(data.quantidade_estoque) > 0) {
-      await prisma.movimentacaoEstoque.create({
-        data: {
-          produto_id: produto.id,
-          tipo: 'ENTRADA',
-          quantidade: parseInt(data.quantidade_estoque),
-          valor_unitario: parseFloat(data.preco_custo),
-          motivo: 'Estoque inicial',
-        },
-      })
-    }
 
     return NextResponse.json({ produto })
   } catch (error) {
@@ -104,15 +85,10 @@ export async function PUT(request: NextRequest) {
       where: { id: data.id },
       data: {
         nome: data.nome,
-        descricao: data.descricao,
-        codigo_barras: data.codigo_barras,
         preco_custo: parseFloat(data.preco_custo),
         preco_venda: parseFloat(data.preco_venda),
+        quantidade_estoque: parseInt(data.quantidade_estoque),
         estoque_minimo: parseInt(data.estoque_minimo),
-        categoria: data.categoria,
-        marca: data.marca,
-        fornecedor: data.fornecedor,
-        status: data.status,
       },
     })
 
