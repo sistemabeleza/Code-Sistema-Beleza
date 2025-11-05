@@ -45,7 +45,6 @@ const navigation = [
   { name: 'Profissionais', href: '/dashboard/profissionais', icon: UserCheck },
   { name: 'Serviços', href: '/dashboard/servicos', icon: Scissors },
   { name: 'Produtos', href: '/dashboard/produtos', icon: Package },
-  { name: 'Vendas', href: '/dashboard/vendas', icon: ShoppingBag },
   { name: 'Financeiro', href: '/dashboard/financeiro', icon: CreditCard },
   { name: 'Relatórios', href: '/dashboard/relatorios', icon: BarChart3 },
   { name: 'Configurações', href: '/dashboard/configuracoes', icon: Settings },

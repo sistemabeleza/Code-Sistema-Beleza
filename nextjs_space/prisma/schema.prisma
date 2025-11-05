@@ -41,6 +41,8 @@ model Salao {
   produtos            Produto[]
   agendamentos        Agendamento[]
   vendas              Venda[]
+  lancamentos         Lancamento[]
+  relatorios          RelatorioFinanceiro[]
   configuracao        ConfiguracaoSalao?
 
   @@map("saloes")
@@ -450,4 +452,68 @@ enum OrigemAgendamento {
 enum DocumentType {
   CPF
   CNPJ
+}
+
+enum TipoLancamento {
+  RECEITA
+  DESPESA
+}
+
+enum CategoriaLancamento {
+  // Receitas
+  SERVICO
+  PRODUTO
+  OUTRO_RECEITA
+  
+  // Despesas
+  SALARIO
+  FORNECEDOR
+  ALUGUEL
+  AGUA
+  LUZ
+  INTERNET
+  TELEFONE
+  PRODUTO_COMPRA
+  EQUIPAMENTO
+  MARKETING
+  MANUTENCAO
+  OUTRO_DESPESA
+}
+
+// Modelo de lançamentos financeiros (receitas e despesas)
+model Lancamento {
+  id                String                @id @default(cuid())
+  salao_id          String
+  tipo              TipoLancamento
+  categoria         CategoriaLancamento
+  descricao         String
+  valor             Decimal               @db.Decimal(10, 2)
+  data_lancamento   DateTime              @default(now())
+  observacoes       String?
+  data_criacao      DateTime              @default(now())
+  data_atualizacao  DateTime              @updatedAt
+
+  // Relacionamentos
+  salao             Salao                 @relation(fields: [salao_id], references: [id], onDelete: Cascade)
+
+  @@map("lancamentos")
+}
+
+// Modelo de relatórios financeiros salvos
+model RelatorioFinanceiro {
+  id                String                @id @default(cuid())
+  salao_id          String
+  tipo_periodo      String                // SEMANAL, MENSAL
+  data_inicio       DateTime
+  data_fim          DateTime
+  total_receitas    Decimal               @db.Decimal(10, 2)
+  total_despesas    Decimal               @db.Decimal(10, 2)
+  saldo             Decimal               @db.Decimal(10, 2)
+  dados_json        String                @db.Text  // JSON com detalhes do relatório
+  data_criacao      DateTime              @default(now())
+
+  // Relacionamentos
+  salao             Salao                 @relation(fields: [salao_id], references: [id], onDelete: Cascade)
+
+  @@map("relatorios_financeiros")
 }
