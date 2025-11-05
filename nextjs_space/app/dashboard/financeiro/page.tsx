@@ -3,13 +3,14 @@
 
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { TrendingUp, TrendingDown, Plus, Trash2, Calendar, FileText } from 'lucide-react'
+import { TrendingUp, TrendingDown, Plus, Trash2, Calendar, FileText, ShoppingCart, AlertTriangle, Package } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
@@ -32,6 +33,14 @@ interface Relatorio {
   total_despesas: number
   saldo: number
   data_criacao: string
+}
+
+interface Produto {
+  id: string
+  nome: string
+  preco_venda: number
+  quantidade_estoque: number
+  estoque_minimo: number
 }
 
 const categoriasReceita = [
@@ -58,7 +67,9 @@ const categoriasDespesa = [
 export default function FinanceiroPage() {
   const [lancamentos, setLancamentos] = useState<Lancamento[]>([])
   const [relatorios, setRelatorios] = useState<Relatorio[]>([])
+  const [produtos, setProdutos] = useState<Produto[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingVenda, setLoadingVenda] = useState<string | null>(null)
   const [modalAberto, setModalAberto] = useState(false)
   const [modalRelatorio, setModalRelatorio] = useState(false)
   const [resumo, setResumo] = useState({ receitas: 0, despesas: 0, saldo: 0 })
@@ -77,16 +88,19 @@ export default function FinanceiroPage() {
 
   const carregarDados = async () => {
     try {
-      const [lancRes, relRes] = await Promise.all([
+      const [lancRes, relRes, prodRes] = await Promise.all([
         fetch('/api/financeiro/lancamentos'),
-        fetch('/api/financeiro/relatorios')
+        fetch('/api/financeiro/relatorios'),
+        fetch('/api/produtos')
       ])
       
       const lancData = await lancRes.json()
       const relData = await relRes.json()
+      const prodData = await prodRes.json()
       
       setLancamentos(lancData.lancamentos || [])
       setRelatorios(relData.relatorios || [])
+      setProdutos(prodData.produtos || [])
       
       // Calcular resumo
       const receitas = lancData.lancamentos
@@ -180,6 +194,30 @@ export default function FinanceiroPage() {
     }
   }
 
+  const venderProduto = async (produtoId: string) => {
+    setLoadingVenda(produtoId)
+    try {
+      const response = await fetch('/api/produtos/venda-rapida', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ produto_id: produtoId }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        toast.success('Venda registrada!')
+        carregarDados()
+      } else {
+        toast.error(data.error || 'Erro ao registrar venda')
+      }
+    } catch (error) {
+      toast.error('Erro ao registrar venda')
+    } finally {
+      setLoadingVenda(null)
+    }
+  }
+
   const formatarMoeda = (valor: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -261,6 +299,7 @@ export default function FinanceiroPage() {
       <Tabs defaultValue="lancamentos" className="space-y-4">
         <TabsList>
           <TabsTrigger value="lancamentos">Lançamentos</TabsTrigger>
+          <TabsTrigger value="produtos">Venda Rápida</TabsTrigger>
           <TabsTrigger value="relatorios">Relatórios Salvos</TabsTrigger>
         </TabsList>
 
@@ -308,6 +347,94 @@ export default function FinanceiroPage() {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="produtos">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <ShoppingCart className="mr-2 h-5 w-5" />
+                Venda Rápida de Produtos
+              </CardTitle>
+              <p className="text-sm text-gray-500 mt-1">
+                Clique no produto para registrar a venda (diminui 1 unidade do estoque e registra receita)
+              </p>
+            </CardHeader>
+            <CardContent>
+              {produtos.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  Nenhum produto cadastrado
+                </div>
+              ) : (
+                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                  {produtos
+                    .filter(p => p.quantidade_estoque > 0)
+                    .map((produto) => (
+                      <Card 
+                        key={produto.id} 
+                        className={`border cursor-pointer hover:shadow-md transition-shadow ${
+                          produto.quantidade_estoque <= produto.estoque_minimo 
+                            ? 'border-orange-300' 
+                            : 'border-gray-200'
+                        }`}
+                        onClick={() => venderProduto(produto.id)}
+                      >
+                        <CardContent className="pt-4">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-gray-900">{produto.nome}</h3>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge variant={
+                                  produto.quantidade_estoque <= produto.estoque_minimo 
+                                    ? 'destructive' 
+                                    : 'secondary'
+                                }>
+                                  <Package className="mr-1 h-3 w-3" />
+                                  {produto.quantidade_estoque} un
+                                </Badge>
+                                {produto.quantidade_estoque <= produto.estoque_minimo && (
+                                  <AlertTriangle className="h-4 w-4 text-orange-500" />
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between mt-3">
+                            <div className="text-xl font-bold text-green-600">
+                              {formatarMoeda(Number(produto.preco_venda))}
+                            </div>
+                            <Button 
+                              size="sm"
+                              disabled={loadingVenda === produto.id}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                venderProduto(produto.id)
+                              }}
+                            >
+                              {loadingVenda === produto.id ? (
+                                <>
+                                  <span className="animate-spin mr-2">⏳</span>
+                                  Vendendo...
+                                </>
+                              ) : (
+                                <>
+                                  <ShoppingCart className="mr-1 h-4 w-4" />
+                                  Vender
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                </div>
+              )}
+              {produtos.filter(p => p.quantidade_estoque > 0).length === 0 && produtos.length > 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  Todos os produtos estão sem estoque
                 </div>
               )}
             </CardContent>

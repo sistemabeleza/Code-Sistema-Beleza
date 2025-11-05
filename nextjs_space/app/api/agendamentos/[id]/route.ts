@@ -26,6 +26,10 @@ export async function PATCH(
       where: {
         id,
         salao_id: session.user.salao_id
+      },
+      include: {
+        servico: true,
+        cliente: true
       }
     })
 
@@ -45,6 +49,23 @@ export async function PATCH(
         servico: true
       }
     })
+
+    // Se o status mudou para REALIZADO, registrar automaticamente como receita
+    if (body.status === 'REALIZADO' && agendamento.status !== 'REALIZADO') {
+      const valorServico = agendamento.valor_cobrado || agendamento.servico.preco
+      
+      await prisma.lancamento.create({
+        data: {
+          salao_id: session.user.salao_id,
+          tipo: 'RECEITA',
+          categoria: 'SERVICO',
+          descricao: `Serviço: ${agendamento.servico.nome} - Cliente: ${agendamento.cliente.nome}`,
+          valor: valorServico,
+          data_lancamento: new Date(),
+          observacoes: `Agendamento #${id.slice(0, 8)}`
+        }
+      })
+    }
 
     return NextResponse.json({
       success: true,
