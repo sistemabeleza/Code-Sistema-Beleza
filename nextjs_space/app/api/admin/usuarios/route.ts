@@ -16,9 +16,14 @@ export async function GET(request: NextRequest) {
       include: {
         salao: {
           select: {
+            id: true,
             nome: true,
             email: true,
             telefone: true,
+            plano: true,
+            is_trial_active: true,
+            trial_start_date: true,
+            trial_end_date: true,
           }
         }
       },

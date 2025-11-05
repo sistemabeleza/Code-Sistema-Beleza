@@ -446,12 +446,31 @@ export default function AdminDashboardPage() {
                           {user.salao?.nome || 'N/A'}
                         </div>
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col gap-1">
+                          <Badge 
+                            variant={
+                              user.salao?.plano === 'COMPLETO' ? 'default' : 
+                              user.salao?.plano === 'INTERMEDIARIO' ? 'secondary' : 
+                              'outline'
+                            }
+                          >
+                            {user.salao?.plano || 'N/A'}
+                          </Badge>
+                          {user.salao?.is_trial_active && (
+                            <span className="text-xs text-green-600 font-medium">
+                              Trial ativo
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => abrirModalEdit(user)}
+                            title="Editar usuário"
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -459,13 +478,26 @@ export default function AdminDashboardPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => abrirModalSenha(user)}
+                            title="Alterar senha"
                           >
                             <Key className="h-4 w-4" />
                           </Button>
+                          {user.salao && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => abrirModalPlano(user)}
+                              title="Alterar plano"
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            >
+                              <Users className="h-4 w-4" />
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => confirmarDelete(user)}
+                            title="Deletar usuário"
                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -631,6 +663,75 @@ export default function AdminDashboardPage() {
             </Button>
             <Button onClick={handleAlterarSenha} className="bg-gray-900 hover:bg-gray-800">
               Alterar Senha
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Alterar Plano */}
+      <Dialog open={modalPlanoAberto} onOpenChange={setModalPlanoAberto}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Alterar Plano do Salão</DialogTitle>
+          </DialogHeader>
+          {usuarioSelecionado?.salao && (
+            <div className="space-y-4">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-600">
+                  Salão: <span className="font-semibold text-gray-900">{usuarioSelecionado.salao.nome}</span>
+                </p>
+                {usuarioSelecionado.salao.is_trial_active && usuarioSelecionado.salao.trial_end_date && (
+                  <p className="text-sm text-green-600 mt-1">
+                    Trial ativo até {new Date(usuarioSelecionado.salao.trial_end_date).toLocaleDateString('pt-BR')}
+                  </p>
+                )}
+              </div>
+              
+              <div>
+                <Label htmlFor="plano">Plano</Label>
+                <Select
+                  value={novoPlano}
+                  onValueChange={(value) => setNovoPlano(value)}
+                >
+                  <SelectTrigger id="plano">
+                    <SelectValue placeholder="Selecione o plano" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="BASICO">
+                      <div className="flex flex-col">
+                        <span className="font-medium">Básico</span>
+                        <span className="text-xs text-gray-500">R$ 39,90/mês - Até 2 profissionais</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="INTERMEDIARIO">
+                      <div className="flex flex-col">
+                        <span className="font-medium">Intermediário</span>
+                        <span className="text-xs text-gray-500">R$ 49,90/mês - Até 6 profissionais</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="COMPLETO">
+                      <div className="flex flex-col">
+                        <span className="font-medium">Completo</span>
+                        <span className="text-xs text-gray-500">R$ 99,90/mês - Profissionais ilimitados</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <p className="text-xs text-blue-800">
+                  <strong>Atenção:</strong> A alteração do plano será aplicada imediatamente. O período de trial não será alterado.
+                </p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setModalPlanoAberto(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleAlterarPlano} className="bg-blue-600 hover:bg-blue-700">
+              Alterar Plano
             </Button>
           </DialogFooter>
         </DialogContent>

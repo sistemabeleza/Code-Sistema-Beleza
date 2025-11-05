@@ -19,7 +19,7 @@ async function main() {
       cor_tema: '#E91E63',
       instagram_handle: '@belezatotal',
       whatsapp_number: '+5527999999999',
-      plano: 'PROFISSIONAL',
+      plano: 'INTERMEDIARIO',
       status: 'ATIVO'
     }
   })
@@ -40,7 +40,7 @@ async function main() {
       cor_tema: '#1E40AF',
       instagram_handle: '@barbeariadodede',
       whatsapp_number: '+5527999999998',
-      plano: 'PROFISSIONAL',
+      plano: 'INTERMEDIARIO',
       status: 'ATIVO'
     }
   })
