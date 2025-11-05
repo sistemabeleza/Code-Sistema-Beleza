@@ -18,6 +18,10 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const data = searchParams.get('data')
 
+    console.log('=== LISTANDO AGENDAMENTOS ===')
+    console.log('salao_id da sessão:', session.user.salao_id)
+    console.log('data filtro:', data)
+
     let where: any = {
       salao_id: session.user.salao_id
     }
@@ -29,11 +33,16 @@ export async function GET(request: NextRequest) {
       const dataFim = new Date(data)
       dataFim.setHours(23, 59, 59, 999)
 
+      console.log('dataInicio:', dataInicio)
+      console.log('dataFim:', dataFim)
+
       where.data = {
         gte: dataInicio,
         lte: dataFim
       }
     }
+
+    console.log('Where clause:', JSON.stringify(where, null, 2))
 
     const agendamentos = await prisma.agendamento.findMany({
       where,
@@ -46,6 +55,11 @@ export async function GET(request: NextRequest) {
         hora_inicio: 'asc'
       }
     })
+
+    console.log('Agendamentos encontrados:', agendamentos.length)
+    if (agendamentos.length > 0) {
+      console.log('Primeira data de agendamento:', agendamentos[0].data)
+    }
 
     return NextResponse.json(agendamentos)
   } catch (error) {

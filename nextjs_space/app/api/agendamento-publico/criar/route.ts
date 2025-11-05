@@ -108,6 +108,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Criar agendamento
+    console.log('=== CRIANDO AGENDAMENTO PÚBLICO ===')
+    console.log('salao_id:', salao_id)
+    console.log('data recebida:', data)
+    console.log('horario recebido:', horario)
+    console.log('dataAgendamento:', dataAgendamento)
+    console.log('dataFim:', dataFim)
+
     const agendamento = await prisma.agendamento.create({
       data: {
         salao_id,
@@ -127,6 +134,8 @@ export async function POST(request: NextRequest) {
         profissional: true
       }
     })
+
+    console.log('Agendamento criado com sucesso:', agendamento.id)
 
     return NextResponse.json({
       success: true,
