@@ -15,6 +15,10 @@ export async function GET(request: NextRequest) {
     }
 
     const usuarios = await prisma.user.findMany({
+      where: {
+        // Não mostrar usuários de teste do sistema
+        email: { not: 'john@doe.com' }
+      },
       include: {
         salao: {
           select: {
@@ -43,7 +47,7 @@ export async function GET(request: NextRequest) {
       updatedAt: u.updatedAt,
     }))
 
-    return NextResponse.json({ usuarios: usuariosLimpos })
+    return NextResponse.json(usuariosLimpos)
   } catch (error) {
     console.error('Erro ao buscar usuários:', error)
     return NextResponse.json({ error: 'Erro ao buscar usuários' }, { status: 500 })
@@ -104,6 +108,62 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// Atualizar usuário
+export async function PUT(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    }
+
+    const data = await request.json()
+
+    if (!data.id) {
+      return NextResponse.json({ error: 'ID do usuário não informado' }, { status: 400 })
+    }
+
+    // Verificar se email já existe em outro usuário
+    if (data.email) {
+      const usuarioExistente = await prisma.user.findFirst({
+        where: { 
+          email: data.email,
+          NOT: { id: data.id }
+        }
+      })
+
+      if (usuarioExistente) {
+        return NextResponse.json({ error: 'Email já cadastrado em outro usuário' }, { status: 400 })
+      }
+    }
+
+    const usuario = await prisma.user.update({
+      where: { id: data.id },
+      data: {
+        name: data.name,
+        email: data.email,
+        tipo: data.tipo,
+      },
+      include: {
+        salao: {
+          select: {
+            nome: true,
+            email: true,
+          }
+        }
+      }
+    })
+
+    // Não retornar senha
+    const { password, ...usuarioLimpo } = usuario
+
+    return NextResponse.json({ usuario: usuarioLimpo })
+  } catch (error) {
+    console.error('Erro ao atualizar usuário:', error)
+    return NextResponse.json({ error: 'Erro ao atualizar usuário' }, { status: 500 })
+  }
+}
+
 // Excluir usuário
 export async function DELETE(request: NextRequest) {
   try {
@@ -113,8 +173,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
-    const { searchParams } = new URL(request.url)
-    const id = searchParams.get('id')
+    const { id } = await request.json()
 
     if (!id) {
       return NextResponse.json({ error: 'ID do usuário não informado' }, { status: 400 })

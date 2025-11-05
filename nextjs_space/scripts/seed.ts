@@ -26,21 +26,58 @@ async function main() {
 
   console.log('✅ Salão criado')
 
-  // Criar usuário admin
-  const adminUser = await prisma.user.upsert({
-    where: { email: 'admin@belezatotal.com.br' },
+  // Criar salão do Douglas Oliver
+  const salaoDouglas = await prisma.salao.upsert({
+    where: { slug: 'barbearia-do-dede' },
     update: {},
     create: {
-      email: 'admin@belezatotal.com.br',
-      name: 'Administrador',
+      nome: 'BARBEARIA DO DEDE',
+      telefone: '+5527999999998',
+      email: 'douglas321.site@gmail.com',
+      endereco: 'Rua do Dedé, 321',
+      slug: 'barbearia-do-dede',
+      descricao: 'Barbearia do Dedé - Estilo e qualidade',
+      cor_tema: '#1E40AF',
+      instagram_handle: '@barbeariadodede',
+      whatsapp_number: '+5527999999998',
+      plano: 'PROFISSIONAL',
+      status: 'ATIVO'
+    }
+  })
+
+  // Criar usuário Douglas Oliver
+  const douglasUser = await prisma.user.upsert({
+    where: { email: 'douglas321.site@gmail.com' },
+    update: {},
+    create: {
+      email: 'douglas321.site@gmail.com',
+      name: 'douglas oliver',
       password: '$2a$10$rN7YJnKwVqQzJz.5dLxqReK7q0u9QXC9.FV.qhG6XJZ5zK0LqN7Ci', // senha: admin123
+      salao_id: salaoDouglas.id,
+      tipo: 'ADMIN',
+      status: 'ATIVO'
+    }
+  })
+
+  console.log('✅ Usuário Douglas Oliver criado')
+
+  // Criar usuário de teste para autenticação do sistema
+  const testUser = await prisma.user.upsert({
+    where: { email: 'john@doe.com' },
+    update: {
+      password: '$2a$10$9xEbBPBh5HbXVHgp6enU0OPkM9vDQ7gPPu8yHbT3XVVul09EVY8qq'
+    },
+    create: {
+      email: 'john@doe.com',
+      name: 'John Doe',
+      password: '$2a$10$9xEbBPBh5HbXVHgp6enU0OPkM9vDQ7gPPu8yHbT3XVVul09EVY8qq', // senha: johndoe123
       salao_id: salao.id,
       tipo: 'ADMIN',
       status: 'ATIVO'
     }
   })
 
-  console.log('✅ Usuário admin criado')
+  console.log('✅ Usuário de teste criado')
 
   // Criar profissionais
   const profissionais = await Promise.all([
