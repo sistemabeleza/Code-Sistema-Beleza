@@ -95,23 +95,23 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <div className="flex items-center justify-center mb-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4 sm:p-6 md:p-8">
+      <Card className="w-full max-w-[90%] sm:max-w-md shadow-xl">
+        <CardHeader className="space-y-3 px-4 sm:px-6">
+          <div className="flex items-center justify-center mb-2">
             <div className="bg-blue-600 p-3 rounded-lg">
-              <Scissors className="h-8 w-8 text-white" />
+              <Scissors className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
             </div>
           </div>
-          <CardTitle className="text-2xl text-center">Criar Conta</CardTitle>
-          <CardDescription className="text-center">
+          <CardTitle className="text-xl sm:text-2xl text-center font-bold">Criar Conta</CardTitle>
+          <CardDescription className="text-center text-sm sm:text-base">
             Crie sua conta e comece a gerenciar seu salão em minutos
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 sm:px-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="nomeSalao">Nome do Salão</Label>
+              <Label htmlFor="nomeSalao" className="text-sm sm:text-base">Nome do Salão</Label>
               <Input
                 id="nomeSalao"
                 name="nomeSalao"
@@ -120,11 +120,12 @@ export default function SignUpPage() {
                 onChange={handleChange}
                 disabled={isLoading}
                 required
+                className="h-11 sm:h-12 text-sm sm:text-base"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="nomeUsuario">Seu Nome</Label>
+              <Label htmlFor="nomeUsuario" className="text-sm sm:text-base">Seu Nome</Label>
               <Input
                 id="nomeUsuario"
                 name="nomeUsuario"
@@ -133,11 +134,12 @@ export default function SignUpPage() {
                 onChange={handleChange}
                 disabled={isLoading}
                 required
+                className="h-11 sm:h-12 text-sm sm:text-base"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-sm sm:text-base">Email</Label>
               <Input
                 id="email"
                 name="email"
@@ -147,11 +149,12 @@ export default function SignUpPage() {
                 onChange={handleChange}
                 disabled={isLoading}
                 required
+                className="h-11 sm:h-12 text-sm sm:text-base"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="senha">Senha</Label>
+              <Label htmlFor="senha" className="text-sm sm:text-base">Senha</Label>
               <Input
                 id="senha"
                 name="senha"
@@ -161,11 +164,12 @@ export default function SignUpPage() {
                 onChange={handleChange}
                 disabled={isLoading}
                 required
+                className="h-11 sm:h-12 text-sm sm:text-base"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmarSenha">Confirmar Senha</Label>
+              <Label htmlFor="confirmarSenha" className="text-sm sm:text-base">Confirmar Senha</Label>
               <Input
                 id="confirmarSenha"
                 name="confirmarSenha"
@@ -175,12 +179,13 @@ export default function SignUpPage() {
                 onChange={handleChange}
                 disabled={isLoading}
                 required
+                className="h-11 sm:h-12 text-sm sm:text-base"
               />
             </div>
 
             <Button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700"
+              className="w-full h-11 sm:h-12 bg-blue-600 hover:bg-blue-700 text-sm sm:text-base font-medium mt-6"
               disabled={isLoading}
             >
               {isLoading ? (

@@ -1,7 +1,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
@@ -19,7 +19,8 @@ import {
   LogOut,
   Menu,
   X,
-  Bell
+  Bell,
+  ExternalLink
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -55,10 +56,44 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const router = useRouter()
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [salaoSlug, setSalaoSlug] = useState<string | null>(null)
+
+  // Buscar slug do salão
+  useEffect(() => {
+    const fetchSlug = async () => {
+      try {
+        const res = await fetch('/api/configuracoes', {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+        if (res.ok) {
+          const data = await res.json()
+          if (data.slug) {
+            setSalaoSlug(data.slug)
+          }
+        }
+      } catch (error) {
+        // Silenciosamente ignora o erro se não conseguir buscar o slug
+        console.log('Configuração não carregada ainda')
+      }
+    }
+    
+    // Só buscar se tiver sessão
+    if (session?.user) {
+      fetchSlug()
+    }
+  }, [session])
 
   const handleLogout = async () => {
     await signOut({ redirect: false })
     router.push('/')
+  }
+
+  const handleVerPaginaCliente = () => {
+    if (salaoSlug) {
+      window.open(`/agendamento/${salaoSlug}`, '_blank')
+    }
   }
 
   const getUserInitials = (name?: string | null) => {
@@ -102,27 +137,30 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Mobile sidebar */}
       <div className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
-        <div className="relative flex flex-col w-full max-w-xs bg-white">
-          <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
-            <div className="flex flex-col">
+        <div className="relative flex flex-col w-full max-w-[280px] sm:max-w-xs bg-white h-full">
+          <div className="flex items-center justify-between h-14 sm:h-16 px-3 sm:px-4 border-b border-gray-200">
+            <div className="flex flex-col flex-1 min-w-0">
               <div className="flex items-center space-x-2">
-                <div className="bg-blue-600 p-2 rounded-lg">
-                  <Scissors className="h-4 w-4 text-white" />
+                <div className="bg-blue-600 p-1.5 sm:p-2 rounded-lg flex-shrink-0">
+                  <Scissors className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
                 </div>
-                <span className="text-base font-bold text-gray-800">{session?.user.salao_nome || 'Sistema Beleza'}</span>
+                <span className="text-sm sm:text-base font-bold text-gray-800 truncate">
+                  {session?.user.salao_nome || 'Sistema Beleza'}
+                </span>
               </div>
-              <span className="text-xs text-gray-500 ml-10">Multi-Salão SaaS</span>
+              <span className="text-xs text-gray-500 ml-8 sm:ml-10">Multi-Salão SaaS</span>
             </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setSidebarOpen(false)}
+              className="flex-shrink-0"
             >
               <X className="h-5 w-5" />
             </Button>
           </div>
           
-          <nav className="flex-1 px-4 py-4 space-y-2">
+          <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
             {navigation.map((item) => {
               const isActive = pathname === item.href
               return (
@@ -141,6 +179,20 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 </Link>
               )
             })}
+            
+            {/* Botão Ver Página do Cliente */}
+            {salaoSlug && (
+              <button
+                onClick={() => {
+                  handleVerPaginaCliente()
+                  setSidebarOpen(false)
+                }}
+                className="w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors text-green-700 bg-green-50 hover:bg-green-100 border border-green-200"
+              >
+                <ExternalLink className="mr-3 h-5 w-5" />
+                Ver Página do Cliente
+              </button>
+            )}
           </nav>
         </div>
       </div>
@@ -175,6 +227,17 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               </Link>
             )
           })}
+          
+          {/* Botão Ver Página do Cliente */}
+          {salaoSlug && (
+            <button
+              onClick={handleVerPaginaCliente}
+              className="w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors text-green-700 bg-green-50 hover:bg-green-100 border border-green-200"
+            >
+              <ExternalLink className="mr-3 h-5 w-5" />
+              Ver Página do Cliente
+            </button>
+          )}
         </nav>
       </div>
 
@@ -182,20 +245,23 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <div className="lg:pl-64">
         {/* Top navbar */}
         <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
-          <div className="flex items-center justify-between h-16 px-4 sm:px-6">
+          <div className="flex items-center justify-between h-14 sm:h-16 px-3 sm:px-4 md:px-6">
             <div className="flex items-center">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setSidebarOpen(true)}
-                className="lg:hidden"
+                className="lg:hidden -ml-2"
               >
-                <Menu className="h-5 w-5" />
+                <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
               </Button>
+              <span className="ml-2 lg:hidden text-sm sm:text-base font-semibold text-gray-800">
+                {session?.user.salao_nome || 'Sistema Beleza'}
+              </span>
             </div>
 
-            <div className="flex items-center space-x-4">
-              <div className="relative">
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <div className="relative hidden sm:block">
                 <Bell className="h-5 w-5 text-gray-400" />
                 <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
                   3
@@ -205,23 +271,24 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <Button
                 onClick={handleLogout}
                 variant="ghost"
-                className="flex items-center space-x-3 hover:bg-gray-100"
+                className="flex items-center space-x-2 sm:space-x-3 hover:bg-gray-100 px-2 sm:px-3"
                 title="Sair"
               >
-                <Avatar className="h-8 w-8">
+                <Avatar className="h-7 w-7 sm:h-8 sm:w-8">
                   <AvatarImage src={session?.user?.image || undefined} />
-                  <AvatarFallback>
+                  <AvatarFallback className="text-xs sm:text-sm">
                     {getUserInitials(session?.user?.name)}
                   </AvatarFallback>
                 </Avatar>
-                <div className="hidden sm:block text-left">
-                  <p className="text-sm font-medium text-gray-700">
+                <div className="hidden md:block text-left">
+                  <p className="text-sm font-medium text-gray-700 truncate max-w-[120px] lg:max-w-[200px]">
                     {session?.user?.name || 'Usuário'}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 truncate max-w-[120px] lg:max-w-[200px]">
                     {session?.user?.email}
                   </p>
                 </div>
+                <LogOut className="h-4 w-4 text-gray-500 hidden sm:block" />
               </Button>
             </div>
           </div>
@@ -229,7 +296,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
         {/* Page content */}
         <main className="flex-1">
-          <div className="py-6 px-4 sm:px-6">
+          <div className="py-4 sm:py-6 px-3 sm:px-4 md:px-6">
             {children}
           </div>
         </main>

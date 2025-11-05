@@ -61,26 +61,26 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-xl">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4 sm:p-6 md:p-8">
+      <Card className="w-full max-w-[90%] sm:max-w-md shadow-xl">
+        <CardHeader className="text-center space-y-3 px-4 sm:px-6">
+          <div className="flex justify-center mb-2">
             <div className="bg-blue-600 p-3 rounded-full">
-              <Scissors className="h-8 w-8 text-white" />
+              <Scissors className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold text-gray-800">
+          <CardTitle className="text-xl sm:text-2xl font-bold text-gray-800">
             Sistema Beleza
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-sm sm:text-base">
             Acesse sua conta para gerenciar seu salão
           </CardDescription>
         </CardHeader>
 
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <CardContent className="px-4 sm:px-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-sm sm:text-base">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -88,12 +88,12 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full"
+                className="w-full h-11 sm:h-12 text-sm sm:text-base"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
+              <Label htmlFor="password" className="text-sm sm:text-base">Senha</Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -102,7 +102,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full pr-10"
+                  className="w-full h-11 sm:h-12 text-sm sm:text-base pr-10"
                 />
                 <button
                   type="button"
@@ -114,15 +114,28 @@ export default function LoginPage() {
               </div>
             </div>
 
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => toast({
+                  title: 'Recuperação de senha',
+                  description: 'Entre em contato com o suporte para recuperar sua senha'
+                })}
+                className="text-sm text-blue-600 hover:text-blue-700 hover:underline font-medium"
+              >
+                Esqueceu a senha?
+              </button>
+            </div>
+
             {error && (
               <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
+                <AlertDescription className="text-sm">{error}</AlertDescription>
               </Alert>
             )}
 
             <Button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700"
+              className="w-full h-11 sm:h-12 bg-blue-600 hover:bg-blue-700 text-sm sm:text-base font-medium"
               disabled={loading}
             >
               {loading ? (
@@ -134,20 +147,18 @@ export default function LoginPage() {
                 'Entrar'
               )}
             </Button>
-          </form>
 
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-            <p className="text-sm text-blue-800 font-medium mb-2">
-              Usuários de teste:
-            </p>
-            <div className="space-y-1 text-xs text-blue-700">
-              <p><strong>Admin:</strong> john@doe.com</p>
-              <p><strong>Admin:</strong> admin@salao.com</p>
-              <p><strong>Gerente:</strong> gerente@salao.com</p>
-              <p><strong>Atendente:</strong> atendente@salao.com</p>
-              <p className="mt-2 font-medium">Senha padrão: johndoe123 (para john@doe.com)</p>
+            <div className="text-center pt-2">
+              <span className="text-sm text-gray-600">Não tem uma conta? </span>
+              <button
+                type="button"
+                onClick={() => router.push('/auth/signup')}
+                className="text-sm text-blue-600 hover:text-blue-700 hover:underline font-medium"
+              >
+                Criar conta
+              </button>
             </div>
-          </div>
+          </form>
         </CardContent>
       </Card>
     </div>
