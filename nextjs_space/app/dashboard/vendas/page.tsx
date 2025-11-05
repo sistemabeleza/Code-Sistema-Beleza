@@ -2,9 +2,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ShoppingBag, Plus, Shield } from 'lucide-react'
+import { ShoppingBag, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
@@ -34,7 +33,6 @@ interface Venda {
 }
 
 export default function VendasPage() {
-  const router = useRouter()
   const [vendas, setVendas] = useState<Venda[]>([])
   const [clientes, setClientes] = useState<any[]>([])
   const [produtos, setProdutos] = useState<any[]>([])
@@ -204,14 +202,6 @@ export default function VendasPage() {
           <h1 className="text-2xl font-bold text-gray-900">Vendas</h1>
           <p className="text-gray-600">Gestão de vendas do salão</p>
         </div>
-        <Button 
-          variant="outline"
-          onClick={() => router.push('/dashboard/admin')}
-          className="flex items-center gap-2"
-        >
-          <Shield className="h-4 w-4" />
-          Painel Admin
-        </Button>
       </div>
 
       <div className="flex items-center justify-end">
