@@ -31,7 +31,11 @@ interface User {
   status: string
   createdAt: string
   salao?: {
+    id: string
     nome: string
+    plano: string
+    is_trial_active: boolean
+    trial_end_date: string | null
   }
 }
 
@@ -42,9 +46,11 @@ export default function AdminDashboardPage() {
   const [modalAberto, setModalAberto] = useState(false)
   const [modalEditAberto, setModalEditAberto] = useState(false)
   const [modalSenhaAberto, setModalSenhaAberto] = useState(false)
+  const [modalPlanoAberto, setModalPlanoAberto] = useState(false)
   const [usuarioSelecionado, setUsuarioSelecionado] = useState<User | null>(null)
   const [deleteDialogAberto, setDeleteDialogAberto] = useState(false)
   const [usuarioParaDeletar, setUsuarioParaDeletar] = useState<User | null>(null)
+  const [novoPlano, setNovoPlano] = useState('')
 
   const [novoUsuario, setNovoUsuario] = useState({
     name: '',
@@ -224,6 +230,46 @@ export default function AdminDashboardPage() {
     setModalSenhaAberto(true)
   }
 
+  const abrirModalPlano = (user: User) => {
+    if (!user.salao) {
+      toast.error('Este usuário não tem um salão associado')
+      return
+    }
+    setUsuarioSelecionado(user)
+    setNovoPlano(user.salao.plano)
+    setModalPlanoAberto(true)
+  }
+
+  const handleAlterarPlano = async () => {
+    if (!usuarioSelecionado?.salao || !novoPlano) {
+      toast.error('Selecione um plano')
+      return
+    }
+
+    try {
+      const response = await fetch('/api/admin/usuarios/alterar-plano', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          salaoId: usuarioSelecionado.salao.id,
+          plano: novoPlano
+        })
+      })
+
+      if (response.ok) {
+        toast.success('Plano alterado com sucesso!')
+        setModalPlanoAberto(false)
+        setUsuarioSelecionado(null)
+        await carregarUsuarios()
+      } else {
+        const data = await response.json()
+        toast.error(data.error || 'Erro ao alterar plano')
+      }
+    } catch (error) {
+      toast.error('Erro ao alterar plano')
+    }
+  }
+
   const confirmarDelete = (user: User) => {
     setUsuarioParaDeletar(user)
     setDeleteDialogAberto(true)
@@ -367,6 +413,9 @@ export default function AdminDashboardPage() {
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Salão
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Plano
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Ações

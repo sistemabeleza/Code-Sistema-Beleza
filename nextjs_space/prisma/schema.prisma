@@ -30,6 +30,10 @@ model Salao {
   timezone            String?              @default("America/Sao_Paulo")
   plano               PlanoSalao           @default(BASICO)
   status              StatusSalao          @default(ATIVO)
+  trial_start_date    DateTime?            // Data de início do trial gratuito
+  trial_end_date      DateTime?            // Data de fim do trial (30 dias após o início)
+  is_trial_active     Boolean              @default(false) // Se está no período de trial
+  subscription_start_date DateTime?        // Data de início da assinatura paga
   data_criacao        DateTime             @default(now())
   data_atualizacao    DateTime             @updatedAt
 
@@ -432,9 +436,8 @@ enum TipoMovimentacao {
 
 enum PlanoSalao {
   BASICO
-  PROFISSIONAL
-  PREMIUM
-  ENTERPRISE
+  INTERMEDIARIO
+  COMPLETO
 }
 
 enum StatusSalao {

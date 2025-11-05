@@ -14,6 +14,7 @@ export async function POST(request: NextRequest) {
     const nome = body.nome || (body.firstName && body.lastName ? `${body.firstName} ${body.lastName}` : null)
     const email = body.email
     const senha = body.senha || body.password
+    const plano = body.plano || 'BASICO'
 
     // Validações
     if (!nomeSalao || !nome || !email || !senha) {
@@ -47,12 +48,20 @@ export async function POST(request: NextRequest) {
 
     // Criar salão e usuário em uma transação
     const result = await prisma.$transaction(async (tx) => {
+      // Calcular datas do trial (30 dias)
+      const trialStartDate = new Date()
+      const trialEndDate = new Date()
+      trialEndDate.setDate(trialEndDate.getDate() + 30)
+      
       // 1. Criar o salão
       const salao = await tx.salao.create({
         data: {
           nome: nomeSalao,
-          plano: 'BASICO',
-          status: 'ATIVO'
+          plano: plano as any, // BASICO, INTERMEDIARIO ou COMPLETO
+          status: 'ATIVO',
+          is_trial_active: true,
+          trial_start_date: trialStartDate,
+          trial_end_date: trialEndDate
         }
       })
 

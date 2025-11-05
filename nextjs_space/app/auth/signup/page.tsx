@@ -7,9 +7,34 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Scissors, Loader2 } from 'lucide-react'
+import { Scissors, Loader2, Check } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
+
+const PLANOS = [
+  {
+    id: 'BASICO',
+    nome: 'Básico',
+    preco: 39.90,
+    limite: '2 profissionais',
+    descricao: 'Ideal para salões pequenos'
+  },
+  {
+    id: 'INTERMEDIARIO',
+    nome: 'Intermediário',
+    preco: 49.90,
+    limite: '6 profissionais',
+    descricao: 'Para salões em crescimento'
+  },
+  {
+    id: 'COMPLETO',
+    nome: 'Completo',
+    preco: 99.90,
+    limite: 'Profissionais ilimitados',
+    descricao: 'Para salões estabelecidos'
+  }
+]
 
 export default function SignUpPage() {
   const router = useRouter()
@@ -19,7 +44,8 @@ export default function SignUpPage() {
     nomeUsuario: '',
     email: '',
     senha: '',
-    confirmarSenha: ''
+    confirmarSenha: '',
+    plano: 'BASICO'
   })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -59,7 +85,8 @@ export default function SignUpPage() {
           nomeSalao: formData.nomeSalao,
           nome: formData.nomeUsuario,
           email: formData.email,
-          senha: formData.senha
+          senha: formData.senha,
+          plano: formData.plano
         })
       })
 
@@ -110,6 +137,43 @@ export default function SignUpPage() {
         </CardHeader>
         <CardContent className="px-4 sm:px-6">
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Seleção de Plano */}
+            <div className="space-y-3">
+              <Label className="text-sm sm:text-base font-semibold">Escolha seu Plano</Label>
+              <p className="text-xs sm:text-sm text-gray-600 mb-3">30 dias grátis em qualquer plano escolhido</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {PLANOS.map((plano) => (
+                  <button
+                    key={plano.id}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, plano: plano.id })}
+                    disabled={isLoading}
+                    className={cn(
+                      "relative p-4 rounded-lg border-2 transition-all text-left",
+                      formData.plano === plano.id
+                        ? "border-blue-600 bg-blue-50"
+                        : "border-gray-200 hover:border-blue-300"
+                    )}
+                  >
+                    {formData.plano === plano.id && (
+                      <div className="absolute top-2 right-2 bg-blue-600 rounded-full p-1">
+                        <Check className="h-3 w-3 text-white" />
+                      </div>
+                    )}
+                    <div className="space-y-1">
+                      <h3 className="font-semibold text-sm">{plano.nome}</h3>
+                      <p className="text-lg font-bold text-blue-600">
+                        R$ {plano.preco.toFixed(2)}
+                        <span className="text-xs text-gray-600 font-normal">/mês</span>
+                      </p>
+                      <p className="text-xs text-gray-600">{plano.limite}</p>
+                      <p className="text-xs text-gray-500">{plano.descricao}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="nomeSalao" className="text-sm sm:text-base">Nome do Salão</Label>
               <Input

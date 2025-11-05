@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { DEFAULT_WORK_HOURS } from '@/lib/scheduling'
+import { canAddProfessional } from '@/lib/plan-limits'
 
 // GET - Listar todos os profissionais
 export async function GET(request: NextRequest) {
@@ -58,6 +59,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Informe o nome do profissional' },
         { status: 400 }
+      )
+    }
+
+    // Buscar informações do salão e plano
+    const salao = await prisma.salao.findUnique({
+      where: { id: session.user.salao_id }
+    })
+
+    if (!salao) {
+      return NextResponse.json(
+        { error: 'Salão não encontrado' },
+        { status: 404 }
+      )
+    }
+
+    // Contar profissionais ativos
+    const profissionaisAtivos = await prisma.profissional.count({
+      where: {
+        salao_id: session.user.salao_id,
+        status: 'ATIVO'
+      }
+    })
+
+    // Verificar se pode adicionar mais profissionais
+    const limiteCheck = canAddProfessional(salao.plano, profissionaisAtivos)
+    
+    if (!limiteCheck.allowed) {
+      return NextResponse.json(
+        { error: limiteCheck.message },
+        { status: 403 }
       )
     }
 
