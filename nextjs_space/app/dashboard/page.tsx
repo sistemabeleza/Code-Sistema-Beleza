@@ -7,7 +7,7 @@ import { DashboardOverview } from './_components/dashboard-overview'
 
 export const dynamic = 'force-dynamic'
 
-async function getDashboardData() {
+async function getDashboardData(salaoId: string) {
   const hoje = new Date()
   const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1)
   const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0)
@@ -23,26 +23,50 @@ async function getDashboardData() {
     profissionaisDesempenho,
     produtosBaixoEstoque
   ] = await Promise.all([
-    // Receita de hoje
+    // Receita de hoje - Filtrar por agendamentos e vendas do salão
     prisma.pagamento.aggregate({
       where: {
         status: 'PAGO',
         data_pagamento: {
           gte: new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()),
           lt: new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + 1)
-        }
+        },
+        OR: [
+          {
+            agendamento: {
+              salao_id: salaoId
+            }
+          },
+          {
+            venda: {
+              salao_id: salaoId
+            }
+          }
+        ]
       },
       _sum: { valor: true }
     }),
 
-    // Receita do mês
+    // Receita do mês - Filtrar por agendamentos e vendas do salão
     prisma.pagamento.aggregate({
       where: {
         status: 'PAGO',
         data_pagamento: {
           gte: inicioMes,
           lte: fimMes
-        }
+        },
+        OR: [
+          {
+            agendamento: {
+              salao_id: salaoId
+            }
+          },
+          {
+            venda: {
+              salao_id: salaoId
+            }
+          }
+        ]
       },
       _sum: { valor: true }
     }),
@@ -50,6 +74,7 @@ async function getDashboardData() {
     // Agendamentos de hoje
     prisma.agendamento.count({
       where: {
+        salao_id: salaoId,
         data: {
           gte: new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()),
           lt: new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + 1)
@@ -62,12 +87,16 @@ async function getDashboardData() {
 
     // Total de clientes
     prisma.cliente.count({
-      where: { status: 'ATIVO' }
+      where: { 
+        salao_id: salaoId,
+        status: 'ATIVO' 
+      }
     }),
 
     // Serviços realizados no mês
     prisma.agendamento.count({
       where: {
+        salao_id: salaoId,
         status: 'REALIZADO',
         data_atualizacao: {
           gte: inicioMes,
@@ -79,6 +108,7 @@ async function getDashboardData() {
     // Próximos agendamentos
     prisma.agendamento.findMany({
       where: {
+        salao_id: salaoId,
         data: {
           gte: hoje,
           lte: new Date(hoje.getTime() + 7 * 24 * 60 * 60 * 1000) // Próximos 7 dias
@@ -117,6 +147,7 @@ async function getDashboardData() {
     prisma.agendamento.groupBy({
       by: ['servico_id'],
       where: {
+        salao_id: salaoId,
         status: 'REALIZADO',
         data_atualizacao: {
           gte: inicioMes,
@@ -137,6 +168,7 @@ async function getDashboardData() {
     prisma.agendamento.groupBy({
       by: ['profissional_id'],
       where: {
+        salao_id: salaoId,
         status: 'REALIZADO',
         data_atualizacao: {
           gte: inicioMes,
@@ -156,6 +188,7 @@ async function getDashboardData() {
     // Produtos com baixo estoque
     prisma.produto.findMany({
       where: {
+        salao_id: salaoId,
         status: 'ATIVO',
         quantidade_estoque: {
           lte: prisma.produto.fields.estoque_minimo
@@ -171,6 +204,7 @@ async function getDashboardData() {
   // Buscar detalhes dos serviços mais vendidos
   const servicosDetalhes = await prisma.servico.findMany({
     where: {
+      salao_id: salaoId,
       id: { in: servicosMaisVendidos.map(s => s.servico_id) }
     }
   })
@@ -178,6 +212,7 @@ async function getDashboardData() {
   // Buscar detalhes dos profissionais
   const profissionaisDetalhes = await prisma.profissional.findMany({
     where: {
+      salao_id: salaoId,
       id: { in: profissionaisDesempenho.map(p => p.profissional_id) }
     }
   })
@@ -231,11 +266,11 @@ async function getDashboardData() {
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions)
   
-  if (!session) {
+  if (!session || !session.user?.salao_id) {
     redirect('/auth/login')
   }
 
-  const dashboardData = await getDashboardData()
+  const dashboardData = await getDashboardData(session.user.salao_id)
 
   return (
     <div className="space-y-6">
