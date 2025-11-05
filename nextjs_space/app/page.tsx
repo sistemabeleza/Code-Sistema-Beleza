@@ -45,7 +45,7 @@ export default function HomePage() {
             </div>
             
             <div className="flex items-center space-x-4">
-              <Link href="/dashboard/admin">
+              <Link href="/admin/login">
                 <Button variant="outline" className="border-gray-600 text-gray-600 hover:bg-gray-50">
                   Admin
                 </Button>
