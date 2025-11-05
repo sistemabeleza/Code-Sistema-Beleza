@@ -17,7 +17,9 @@ import {
   XCircle,
   Loader2,
   Globe,
-  UserPlus
+  UserPlus,
+  MessageCircle,
+  Check
 } from 'lucide-react'
 import NovoAgendamentoModal from './NovoAgendamentoModal'
 
@@ -34,6 +36,11 @@ interface Agendamento {
   observacoes?: string
 }
 
+interface ConfiguracoesSalao {
+  slug: string
+  whatsapp_number?: string
+}
+
 export default function AgendaView() {
   const [dataSelecionada, setDataSelecionada] = useState(
     new Date().toISOString().split('T')[0]
@@ -41,10 +48,24 @@ export default function AgendaView() {
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([])
   const [loading, setLoading] = useState(true)
   const [modalAberto, setModalAberto] = useState(false)
+  const [configuracoes, setConfiguracoes] = useState<ConfiguracoesSalao | null>(null)
 
   useEffect(() => {
+    carregarConfiguracoes()
     carregarAgendamentos()
   }, [dataSelecionada])
+
+  const carregarConfiguracoes = async () => {
+    try {
+      const res = await fetch('/api/configuracoes')
+      if (res.ok) {
+        const data = await res.json()
+        setConfiguracoes(data)
+      }
+    } catch (error) {
+      console.error('Erro ao carregar configurações:', error)
+    }
+  }
 
   const carregarAgendamentos = async () => {
     setLoading(true)
@@ -104,6 +125,64 @@ export default function AgendaView() {
       console.error('Erro:', error)
       toast.error('Erro ao cancelar agendamento')
     }
+  }
+
+  const concluirServico = async (id: string) => {
+    try {
+      const res = await fetch(`/api/agendamentos/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'REALIZADO' })
+      })
+
+      if (res.ok) {
+        toast.success('Serviço concluído!')
+        carregarAgendamentos()
+      } else {
+        toast.error('Erro ao concluir serviço')
+      }
+    } catch (error) {
+      console.error('Erro:', error)
+      toast.error('Erro ao concluir serviço')
+    }
+  }
+
+  const enviarWhatsAppLinkAgendamento = (agendamento: Agendamento) => {
+    if (!configuracoes?.slug) {
+      toast.error('Link de agendamento não configurado')
+      return
+    }
+
+    const linkAgendamento = `${window.location.origin}/agendamento/${configuracoes.slug}`
+    const telefone = agendamento.cliente.telefone.replace(/\D/g, '')
+    
+    const mensagem = `Olá ${agendamento.cliente.nome}! 👋\n\n` +
+      `Você pode agendar seu próximo horário através do nosso link:\n` +
+      `${linkAgendamento}\n\n` +
+      `Será um prazer te atender novamente! 💇`
+
+    const whatsappUrl = `https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`
+    window.open(whatsappUrl, '_blank')
+  }
+
+  const enviarWhatsAppConfirmacao = (agendamento: Agendamento) => {
+    const telefone = agendamento.cliente.telefone.replace(/\D/g, '')
+    const dataFormatada = new Date(agendamento.data + 'T12:00:00').toLocaleDateString('pt-BR')
+    const horaInicio = new Date(agendamento.hora_inicio).toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+
+    const mensagem = `Olá ${agendamento.cliente.nome}! 👋\n\n` +
+      `✅ Seu agendamento está confirmado:\n\n` +
+      `📅 Data: ${dataFormatada}\n` +
+      `⏰ Horário: ${horaInicio}\n` +
+      `💇 Serviço: ${agendamento.servico.nome}\n` +
+      `👤 Profissional: ${agendamento.profissional.nome}\n\n` +
+      `Te esperamos! 😊`
+
+    const whatsappUrl = `https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`
+    window.open(whatsappUrl, '_blank')
   }
 
   const getStatusColor = (status: string) => {
@@ -276,28 +355,79 @@ export default function AgendaView() {
                       </p>
                     )}
 
-                    {agendamento.status === 'AGENDADO' && (
-                      <div className="flex gap-2 pt-3 border-t">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="flex-1"
-                          onClick={() => confirmarAgendamento(agendamento.id)}
-                        >
-                          <CheckCircle2 className="h-4 w-4 mr-1" />
-                          Confirmar
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => cancelarAgendamento(agendamento.id)}
-                        >
-                          <XCircle className="h-4 w-4 mr-1" />
-                          Cancelar
-                        </Button>
-                      </div>
-                    )}
+                    {/* Botões de ação */}
+                    <div className="pt-3 border-t space-y-2">
+                      {/* Linha 1: Ações principais */}
+                      {agendamento.status === 'AGENDADO' && (
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1"
+                            onClick={() => confirmarAgendamento(agendamento.id)}
+                          >
+                            <CheckCircle2 className="h-4 w-4 mr-1" />
+                            Confirmar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => cancelarAgendamento(agendamento.id)}
+                          >
+                            <XCircle className="h-4 w-4 mr-1" />
+                            Cancelar
+                          </Button>
+                        </div>
+                      )}
+
+                      {agendamento.status === 'CONFIRMADO' && (
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 bg-green-50 hover:bg-green-100"
+                            onClick={() => concluirServico(agendamento.id)}
+                          >
+                            <Check className="h-4 w-4 mr-1" />
+                            Concluir Serviço
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => cancelarAgendamento(agendamento.id)}
+                          >
+                            <XCircle className="h-4 w-4 mr-1" />
+                            Cancelar
+                          </Button>
+                        </div>
+                      )}
+
+                      {/* Linha 2: WhatsApp (para agendamentos ativos) */}
+                      {(agendamento.status === 'AGENDADO' || agendamento.status === 'CONFIRMADO') && (
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 bg-blue-50 hover:bg-blue-100"
+                            onClick={() => enviarWhatsAppLinkAgendamento(agendamento)}
+                          >
+                            <MessageCircle className="h-4 w-4 mr-1" />
+                            Enviar Link
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 bg-green-50 hover:bg-green-100"
+                            onClick={() => enviarWhatsAppConfirmacao(agendamento)}
+                          >
+                            <MessageCircle className="h-4 w-4 mr-1" />
+                            Enviar Confirmação
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
