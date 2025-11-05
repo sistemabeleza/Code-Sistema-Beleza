@@ -52,6 +52,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json()
+    console.log('📝 Dados recebidos para criar usuário:', data)
+
+    // Validar campos obrigatórios
+    if (!data.name || !data.email || !data.password) {
+      return NextResponse.json({ 
+        error: 'Nome, email e senha são obrigatórios' 
+      }, { status: 400 })
+    }
 
     // Verificar se email já existe
     const usuarioExistente = await prisma.user.findUnique({
@@ -63,7 +71,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Hash da senha
-    const hashedPassword = await bcrypt.hash(data.password || '123456', 10)
+    const hashedPassword = await bcrypt.hash(data.password, 10)
 
     // Criar salão primeiro
     const salao = await prisma.salao.create({
@@ -76,6 +84,7 @@ export async function POST(request: NextRequest) {
         status: 'ATIVO'
       }
     })
+    console.log('✅ Salão criado:', salao.id)
 
     // Criar usuário com o salão
     const usuario = await prisma.user.create({
@@ -98,14 +107,23 @@ export async function POST(request: NextRequest) {
         }
       }
     })
+    console.log('✅ Usuário criado:', usuario.id)
 
     // Não retornar senha
     const { password, ...usuarioLimpo } = usuario
 
-    return NextResponse.json({ usuario: usuarioLimpo })
-  } catch (error) {
-    console.error('Erro ao criar usuário:', error)
-    return NextResponse.json({ error: 'Erro ao criar usuário' }, { status: 500 })
+    return NextResponse.json({ 
+      success: true,
+      usuario: usuarioLimpo,
+      message: 'Usuário criado com sucesso!'
+    })
+  } catch (error: any) {
+    console.error('❌ Erro ao criar usuário:', error)
+    console.error('Stack:', error.stack)
+    return NextResponse.json({ 
+      error: error.message || 'Erro ao criar usuário',
+      details: error.toString()
+    }, { status: 500 })
   }
 }
 
