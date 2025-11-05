@@ -94,8 +94,6 @@ async function getDashboardData() {
             id: true,
             nome: true,
             telefone: true,
-            email: true,
-            especialidade: true,
             status: true
           }
         },
@@ -103,9 +101,6 @@ async function getDashboardData() {
           select: {
             id: true,
             nome: true,
-            descricao: true,
-            categoria: true,
-            cor_agenda: true,
             status: true,
             duracao_minutos: true,
             preco: true
@@ -218,8 +213,7 @@ async function getDashboardData() {
       return {
         nome: servico?.nome || 'Serviço não encontrado',
         quantidade: s._count.servico_id,
-        receita: Number(s._sum.valor_cobrado) || 0,
-        categoria: servico?.categoria || 'N/A'
+        receita: Number(s._sum.valor_cobrado) || 0
       }
     }),
     profissionaisDesempenho: profissionaisDesempenho.map(p => {
@@ -227,8 +221,7 @@ async function getDashboardData() {
       return {
         nome: profissional?.nome || 'Profissional não encontrado',
         servicos_realizados: p._count.profissional_id,
-        receita_gerada: Number(p._sum.valor_cobrado) || 0,
-        comissao_total: Number(p._sum.valor_cobrado) * (Number(profissional?.comissao_percentual) || 0) / 100
+        receita_gerada: Number(p._sum.valor_cobrado) || 0
       }
     }),
     produtosBaixoEstoque: serializedProdutos

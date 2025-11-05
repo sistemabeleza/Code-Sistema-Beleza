@@ -55,8 +55,8 @@ export async function GET(request: NextRequest) {
       workHours = DEFAULT_WORK_HOURS
     }
 
-    const breaks = parseBreaks(profissional.breaks) || []
-    const daysOff = parseDaysOff(profissional.days_off) || []
+    const breaks: any[] = []
+    const daysOff: any[] = []
 
     // Buscar agendamentos do dia
     const targetDate = new Date(data)

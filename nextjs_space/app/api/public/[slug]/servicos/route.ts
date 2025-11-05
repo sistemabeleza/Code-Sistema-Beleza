@@ -39,10 +39,8 @@ export async function GET(
       select: {
         id: true,
         nome: true,
-        descricao: true,
         preco: true,
-        duracao_minutos: true,
-        categoria: true
+        duracao_minutos: true
       }
     })
 

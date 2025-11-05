@@ -67,9 +67,7 @@ export async function GET(
         status: 'ATIVO'
       },
       select: {
-        work_hours: true,
-        breaks: true,
-        days_off: true
+        work_hours: true
       }
     })
 
@@ -112,8 +110,8 @@ export async function GET(
 
     // Calcula os slots disponíveis
     const workHours = parseWorkHours(profissional.work_hours)
-    const breaks = parseBreaks(profissional.breaks)
-    const daysOff = parseDaysOff(profissional.days_off)
+    const breaks: any[] = []
+    const daysOff: any[] = []
 
     const slots = calculateAvailableSlots(
       date,

@@ -29,34 +29,7 @@ export async function GET(
       )
     }
 
-    // Se foi passado um serviço, busca apenas profissionais que atendem esse serviço
-    if (servicoId) {
-      const profissionaisServico = await prisma.profissionalServico.findMany({
-        where: {
-          servico_id: servicoId,
-          profissional: {
-            salao_id: salao.id,
-            status: 'ATIVO'
-          }
-        },
-        include: {
-          profissional: {
-            select: {
-              id: true,
-              nome: true,
-              bio: true,
-              foto: true,
-              especialidade: true
-            }
-          }
-        }
-      })
-
-      const profissionais = profissionaisServico.map(ps => ps.profissional)
-      return NextResponse.json(profissionais)
-    }
-
-    // Senão, busca todos os profissionais ativos
+    // Busca todos os profissionais ativos
     const profissionais = await prisma.profissional.findMany({
       where: {
         salao_id: salao.id,
@@ -68,9 +41,7 @@ export async function GET(
       select: {
         id: true,
         nome: true,
-        bio: true,
-        foto: true,
-        especialidade: true
+        foto: true
       }
     })
 

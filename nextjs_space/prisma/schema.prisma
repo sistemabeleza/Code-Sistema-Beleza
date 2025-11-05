@@ -164,27 +164,17 @@ model Profissional {
   salao_id              String
   nome                  String
   telefone              String?
-  email                 String?
-  cpf                   String?
-  especialidade         String?
-  bio                   String?              // Biografia/descrição do profissional
-  comissao_percentual   Decimal              @default(0) @db.Decimal(5,2)
-  status                StatusProfissional   @default(ATIVO)
   foto                  String?              // URL da foto
+  status                StatusProfissional   @default(ATIVO)
   work_hours            String?              // JSON com horários de trabalho por dia
-  breaks                String?              // JSON com pausas/intervalos
-  days_off              String?              // JSON com folgas/feriados
-  data_contratacao      DateTime?
   data_cadastro         DateTime             @default(now())
   data_atualizacao      DateTime             @updatedAt
 
   // Relacionamentos
   salao                 Salao                @relation(fields: [salao_id], references: [id], onDelete: Cascade)
   agendamentos          Agendamento[]
-  servicos              ProfissionalServico[]
   pagamentos            Pagamento[]
 
-  @@unique([salao_id, email])
   @@map("profissionais")
 }
 
@@ -192,11 +182,8 @@ model Servico {
   id                  String               @id @default(cuid())
   salao_id            String
   nome                String
-  descricao           String?
   preco               Decimal              @db.Decimal(10,2)
   duracao_minutos     Int
-  categoria           String?
-  cor_agenda          String?              // Para visualização no calendário
   status              StatusServico        @default(ATIVO)
   data_cadastro       DateTime             @default(now())
   data_atualizacao    DateTime             @updatedAt
@@ -204,25 +191,9 @@ model Servico {
   // Relacionamentos
   salao               Salao                @relation(fields: [salao_id], references: [id], onDelete: Cascade)
   agendamentos        Agendamento[]
-  profissionais       ProfissionalServico[]
   itens_venda         ItemVenda[]
 
   @@map("servicos")
-}
-
-model ProfissionalServico {
-  id                  String               @id @default(cuid())
-  profissional_id     String
-  servico_id          String
-  preco_personalizado Decimal?             @db.Decimal(10,2)
-  ativo               Boolean              @default(true)
-
-  // Relacionamentos
-  profissional        Profissional         @relation(fields: [profissional_id], references: [id], onDelete: Cascade)
-  servico             Servico              @relation(fields: [servico_id], references: [id], onDelete: Cascade)
-
-  @@unique([profissional_id, servico_id])
-  @@map("profissionais_servicos")
 }
 
 model Agendamento {

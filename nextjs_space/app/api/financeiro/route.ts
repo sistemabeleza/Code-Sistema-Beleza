@@ -119,7 +119,6 @@ export async function GET(request: NextRequest) {
           select: {
             id: true,
             nome: true,
-            comissao_percentual: true,
           },
         },
         servico: {
@@ -130,32 +129,9 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    const comissoesPorProfissional: any = {}
-
-    agendamentos.forEach(ag => {
-      if (!ag.profissional) return
-      
-      const valorServico = parseFloat(ag.valor_cobrado?.toString() || ag.servico.preco.toString())
-      const comissao = valorServico * (parseFloat(ag.profissional.comissao_percentual.toString()) / 100)
-      
-      if (!comissoesPorProfissional[ag.profissional.id]) {
-        comissoesPorProfissional[ag.profissional.id] = {
-          profissional: ag.profissional.nome,
-          total_servicos: 0,
-          total_faturado: 0,
-          total_comissao: 0,
-        }
-      }
-      
-      comissoesPorProfissional[ag.profissional.id].total_servicos++
-      comissoesPorProfissional[ag.profissional.id].total_faturado += valorServico
-      comissoesPorProfissional[ag.profissional.id].total_comissao += comissao
-    })
-
     return NextResponse.json({
       pagamentos,
-      resumo,
-      comissoes: Object.values(comissoesPorProfissional),
+      resumo
     })
   } catch (error) {
     console.error('Erro ao buscar dados financeiros:', error)

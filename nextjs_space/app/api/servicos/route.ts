@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -26,13 +25,6 @@ export async function GET(request: NextRequest) {
       },
       orderBy: {
         nome: 'asc'
-      },
-      include: {
-        profissionais: {
-          include: {
-            profissional: true
-          }
-        }
       }
     })
 
@@ -63,7 +55,7 @@ export async function POST(request: NextRequest) {
     // Validação do nome
     if (!data.nome || data.nome.trim() === '') {
       return NextResponse.json(
-        { error: 'E_SERVICE_NAME_REQUIRED', message: 'Informe o nome do serviço.' },
+        { error: 'Informe o nome do serviço' },
         { status: 400 }
       )
     }
@@ -71,23 +63,15 @@ export async function POST(request: NextRequest) {
     // Validação do preço
     if (data.preco === undefined || data.preco === null || data.preco < 0) {
       return NextResponse.json(
-        { error: 'E_SERVICE_PRICE_REQUIRED', message: 'Informe o preço do serviço.' },
+        { error: 'Informe o preço do serviço' },
         { status: 400 }
       )
     }
 
     // Validação da duração
-    if (!data.duracao_minutos) {
+    if (!data.duracao_minutos || data.duracao_minutos < 5 || data.duracao_minutos > 480) {
       return NextResponse.json(
-        { error: 'E_SERVICE_DURATION_REQUIRED', message: 'Informe a duração do serviço em minutos.' },
-        { status: 400 }
-      )
-    }
-
-    // Valida duração (entre 5 e 480 minutos)
-    if (data.duracao_minutos < 5 || data.duracao_minutos > 480) {
-      return NextResponse.json(
-        { error: 'E_SERVICE_DURATION_INVALID', message: 'Duração deve estar entre 5 e 480 minutos.' },
+        { error: 'Duração deve estar entre 5 e 480 minutos' },
         { status: 400 }
       )
     }
@@ -96,42 +80,17 @@ export async function POST(request: NextRequest) {
       data: {
         salao_id: session.user.salao_id,
         nome: data.nome.trim(),
-        descricao: data.descricao?.trim() || null,
         preco: data.preco,
         duracao_minutos: parseInt(data.duracao_minutos),
-        categoria: data.categoria?.trim() || null,
-        cor_agenda: data.cor_agenda || null,
-        status: data.status || 'ATIVO'
+        status: 'ATIVO'
       }
     })
 
-    // Se há profissionais associados, cria os relacionamentos
-    if (data.profissionais && Array.isArray(data.profissionais) && data.profissionais.length > 0) {
-      await prisma.profissionalServico.createMany({
-        data: data.profissionais.map((profissionalId: string) => ({
-          profissional_id: profissionalId,
-          servico_id: servico.id
-        }))
-      })
-    }
-
-    // Busca o serviço criado com os relacionamentos
-    const servicoCompleto = await prisma.servico.findUnique({
-      where: { id: servico.id },
-      include: {
-        profissionais: {
-          include: {
-            profissional: true
-          }
-        }
-      }
-    })
-
-    return NextResponse.json(servicoCompleto, { status: 201 })
+    return NextResponse.json(servico, { status: 201 })
   } catch (error: any) {
     console.error('Erro ao criar serviço:', error)
     return NextResponse.json(
-      { error: 'E_CREATE_SERVICE_FAILED', message: 'Erro ao criar serviço' },
+      { error: 'Erro ao criar serviço' },
       { status: 500 }
     )
   }
@@ -176,14 +135,14 @@ export async function PUT(request: NextRequest) {
     // Validações
     if (!data.nome || data.nome.trim() === '') {
       return NextResponse.json(
-        { error: 'E_SERVICE_NAME_REQUIRED', message: 'Informe o nome do serviço.' },
+        { error: 'Informe o nome do serviço' },
         { status: 400 }
       )
     }
 
     if (data.duracao_minutos && (data.duracao_minutos < 5 || data.duracao_minutos > 480)) {
       return NextResponse.json(
-        { error: 'E_SERVICE_DURATION_INVALID', message: 'Duração deve estar entre 5 e 480 minutos.' },
+        { error: 'Duração deve estar entre 5 e 480 minutos' },
         { status: 400 }
       )
     }
@@ -192,50 +151,17 @@ export async function PUT(request: NextRequest) {
       where: { id: data.id },
       data: {
         nome: data.nome.trim(),
-        descricao: data.descricao?.trim() || null,
         preco: data.preco,
         duracao_minutos: parseInt(data.duracao_minutos),
-        categoria: data.categoria?.trim() || null,
-        cor_agenda: data.cor_agenda || null,
-        status: data.status
+        status: data.status || 'ATIVO'
       }
     })
 
-    // Atualiza os profissionais associados se fornecido
-    if (data.profissionais !== undefined && Array.isArray(data.profissionais)) {
-      // Remove todos os profissionais existentes
-      await prisma.profissionalServico.deleteMany({
-        where: { servico_id: data.id }
-      })
-
-      // Adiciona os novos profissionais
-      if (data.profissionais.length > 0) {
-        await prisma.profissionalServico.createMany({
-          data: data.profissionais.map((profissionalId: string) => ({
-            profissional_id: profissionalId,
-            servico_id: data.id
-          }))
-        })
-      }
-    }
-
-    // Busca o serviço atualizado com os relacionamentos
-    const servicoCompleto = await prisma.servico.findUnique({
-      where: { id: data.id },
-      include: {
-        profissionais: {
-          include: {
-            profissional: true
-          }
-        }
-      }
-    })
-
-    return NextResponse.json(servicoCompleto)
+    return NextResponse.json(servico)
   } catch (error: any) {
     console.error('Erro ao atualizar serviço:', error)
     return NextResponse.json(
-      { error: 'E_UPDATE_SERVICE_FAILED', message: 'Erro ao atualizar serviço' },
+      { error: 'Erro ao atualizar serviço' },
       { status: 500 }
     )
   }
