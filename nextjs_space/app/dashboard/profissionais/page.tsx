@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Edit, User } from 'lucide-react'
+import { Plus, Edit, User, Phone } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface Profissional {
@@ -40,9 +40,12 @@ export default function ProfissionaisPage() {
       if (res.ok) {
         const data = await res.json()
         setProfissionais(data)
+      } else {
+        toast.error('Erro ao carregar profissionais')
       }
     } catch (error) {
       toast.error('Erro ao carregar profissionais')
+      console.error(error)
     } finally {
       setLoading(false)
     }
@@ -67,6 +70,7 @@ export default function ProfissionaisPage() {
   }
 
   async function salvar() {
+    // Validação
     if (!formData.nome.trim()) {
       toast.error('Informe o nome do profissional')
       return
@@ -74,126 +78,167 @@ export default function ProfissionaisPage() {
 
     try {
       setSalvando(true)
+      
+      const body = {
+        nome: formData.nome.trim(),
+        telefone: formData.telefone.trim() || null
+      }
+
       const url = '/api/profissionais'
       const method = editando ? 'PUT' : 'POST'
-      const body = editando 
-        ? { ...formData, id: editando.id }
-        : formData
+      const payload = editando ? { ...body, id: editando.id } : body
 
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
+        body: JSON.stringify(payload)
       })
 
+      const result = await res.json()
+
       if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.error || 'Erro ao salvar')
+        throw new Error(result.error || 'Erro ao salvar')
       }
 
-      toast.success(editando ? 'Profissional atualizado!' : 'Profissional criado!')
+      toast.success(editando ? 'Profissional atualizado com sucesso!' : 'Profissional criado com sucesso!')
       setDialogOpen(false)
       carregarProfissionais()
     } catch (error: any) {
-      toast.error(error.message || 'Erro ao salvar')
+      console.error('Erro ao salvar:', error)
+      toast.error(error.message || 'Erro ao salvar profissional')
     } finally {
       setSalvando(false)
     }
   }
 
   if (loading) {
-    return <div className="p-8">Carregando...</div>
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-lg">Carregando...</div>
+      </div>
+    )
   }
 
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-6">
+    <div className="p-8 max-w-7xl mx-auto">
+      <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold">Profissionais</h1>
-          <p className="text-gray-600 mt-1">Gerencie sua equipe de profissionais</p>
+          <h1 className="text-3xl font-bold text-gray-900">Profissionais</h1>
+          <p className="text-gray-600 mt-2">Cadastre e gerencie sua equipe de profissionais</p>
         </div>
-        <Button onClick={abrirNovo}>
-          <Plus className="mr-2 h-4 w-4" />
+        <Button onClick={abrirNovo} size="lg">
+          <Plus className="mr-2 h-5 w-5" />
           Novo Profissional
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {profissionais.map((prof) => (
-          <Card key={prof.id}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {prof.nome}
-              </CardTitle>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => abrirEditar(prof)}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <User className="h-4 w-4" />
-                {prof.telefone || 'Sem telefone'}
-              </div>
-              <Badge variant={prof.status === 'ATIVO' ? 'default' : 'secondary'} className="mt-2">
-                {prof.status}
-              </Badge>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {profissionais.length === 0 && (
+      {profissionais.length === 0 ? (
         <Card>
-          <CardContent className="p-8 text-center text-gray-500">
-            Nenhum profissional cadastrado ainda. Clique em "Novo Profissional" para começar.
+          <CardContent className="p-12 text-center">
+            <div className="text-gray-400 mb-4">
+              <User className="mx-auto h-12 w-12" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum profissional cadastrado</h3>
+            <p className="text-gray-600 mb-6">Comece criando seu primeiro profissional</p>
+            <Button onClick={abrirNovo}>
+              <Plus className="mr-2 h-4 w-4" />
+              Criar Primeiro Profissional
+            </Button>
           </CardContent>
         </Card>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {profissionais.map((prof) => (
+            <Card key={prof.id} className="hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-4">
+                <div className="space-y-1">
+                  <CardTitle className="text-lg font-bold">
+                    {prof.nome}
+                  </CardTitle>
+                  <Badge 
+                    variant={prof.status === 'ATIVO' ? 'default' : 'secondary'}
+                    className="mt-2"
+                  >
+                    {prof.status}
+                  </Badge>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => abrirEditar(prof)}
+                  className="hover:bg-gray-100"
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-3 text-base text-gray-600">
+                  <Phone className="h-5 w-5" />
+                  <span>{prof.telefone || 'Sem telefone'}</span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-2xl">
               {editando ? 'Editar Profissional' : 'Novo Profissional'}
             </DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
-            <div>
-              <Label htmlFor="nome">Nome *</Label>
+          <div className="space-y-6 py-6">
+            <div className="space-y-2">
+              <Label htmlFor="nome" className="text-base font-semibold">
+                Nome Completo *
+              </Label>
               <Input
                 id="nome"
                 value={formData.nome}
                 onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                placeholder="Nome do profissional"
+                placeholder="Ex: Maria da Silva"
+                className="text-base"
+                autoFocus
               />
             </div>
 
-            <div>
-              <Label htmlFor="telefone">Telefone</Label>
+            <div className="space-y-2">
+              <Label htmlFor="telefone" className="text-base font-semibold">
+                Telefone
+              </Label>
               <Input
                 id="telefone"
                 value={formData.telefone}
                 onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
                 placeholder="(00) 00000-0000"
+                className="text-base"
               />
+              <p className="text-xs text-gray-500">Campo opcional</p>
             </div>
+
+            <p className="text-sm text-gray-500">
+              * Campos obrigatórios
+            </p>
           </div>
 
-          <div className="flex gap-2 justify-end">
+          <div className="flex gap-3 justify-end pt-4 border-t">
             <Button
               variant="outline"
               onClick={() => setDialogOpen(false)}
               disabled={salvando}
+              size="lg"
             >
               Cancelar
             </Button>
-            <Button onClick={salvar} disabled={salvando}>
-              {salvando ? 'Salvando...' : 'Salvar'}
+            <Button 
+              onClick={salvar} 
+              disabled={salvando}
+              size="lg"
+            >
+              {salvando ? 'Salvando...' : 'Salvar Profissional'}
             </Button>
           </div>
         </DialogContent>
