@@ -8,11 +8,12 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
-import { ExternalLink, Instagram, MessageCircle, Copy } from 'lucide-react'
+import { ExternalLink, Instagram, MessageCircle, Copy, Crown, Zap, Rocket } from 'lucide-react'
 
 export default function ConfiguracoesPage() {
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
+  const [subscriptionInfo, setSubscriptionInfo] = useState<any>(null)
   const [formData, setFormData] = useState({
     nome: '',
     document_type: 'CPF',
@@ -49,6 +50,14 @@ export default function ConfiguracoesPage() {
           instagram_handle: data.instagram_handle || '',
           whatsapp_number: data.whatsapp_number || '',
           timezone: data.timezone || 'America/Sao_Paulo'
+        })
+        
+        // Armazenar informações de assinatura
+        setSubscriptionInfo({
+          plano: data.plano,
+          status: data.status,
+          subscription_end_date: data.subscription_end_date,
+          is_trial_active: data.is_trial_active
         })
       }
     } catch (error) {
@@ -337,6 +346,164 @@ export default function ConfiguracoesPage() {
                   <SelectItem value="America/Rio_Branco">Acre (GMT-5)</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Assinatura de Planos */}
+        <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Crown className="h-5 w-5 text-purple-600" />
+              Assinatura e Planos
+            </CardTitle>
+            <CardDescription>
+              {subscriptionInfo?.is_trial_active 
+                ? 'Você está no modo teste. Escolha um plano para liberar todos os recursos.'
+                : subscriptionInfo?.subscription_end_date 
+                  ? `Seu plano ${subscriptionInfo.plano} expira em ${new Date(subscriptionInfo.subscription_end_date).toLocaleDateString('pt-BR')}`
+                  : 'Escolha um plano para começar'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Plano Básico */}
+              <div className="group relative overflow-hidden rounded-lg border-2 border-purple-200 bg-white p-6 transition-all hover:border-purple-400 hover:shadow-lg">
+                <div className="flex flex-col h-full">
+                  <div className="flex items-center justify-between mb-4">
+                    <Zap className="h-8 w-8 text-purple-600" />
+                    <span className="text-sm font-medium text-purple-600 bg-purple-100 px-3 py-1 rounded-full">
+                      Básico
+                    </span>
+                  </div>
+                  <div className="mb-4">
+                    <div className="text-3xl font-bold text-gray-900">R$ 29,90</div>
+                    <div className="text-sm text-gray-500">por mês</div>
+                  </div>
+                  <ul className="mb-6 flex-1 space-y-2 text-sm text-gray-600">
+                    <li className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-purple-600"></div>
+                      2 profissionais
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-purple-600"></div>
+                      Agenda online
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-purple-600"></div>
+                      Controle financeiro
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-purple-600"></div>
+                      Site grátis incluso
+                    </li>
+                  </ul>
+                  <Button
+                    className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
+                    onClick={() => window.open('https://pay.cakto.com.br/ac64njr_616158', '_blank')}
+                  >
+                    Assinar Plano Básico
+                  </Button>
+                </div>
+              </div>
+
+              {/* Plano Intermediário */}
+              <div className="group relative overflow-hidden rounded-lg border-2 border-pink-300 bg-white p-6 transition-all hover:border-pink-500 hover:shadow-xl">
+                <div className="absolute top-0 right-0 bg-gradient-to-br from-pink-500 to-purple-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
+                  POPULAR
+                </div>
+                <div className="flex flex-col h-full">
+                  <div className="flex items-center justify-between mb-4">
+                    <Rocket className="h-8 w-8 text-pink-600" />
+                    <span className="text-sm font-medium text-pink-600 bg-pink-100 px-3 py-1 rounded-full">
+                      Intermediário
+                    </span>
+                  </div>
+                  <div className="mb-4">
+                    <div className="text-3xl font-bold text-gray-900">R$ 49,90</div>
+                    <div className="text-sm text-gray-500">por mês</div>
+                  </div>
+                  <ul className="mb-6 flex-1 space-y-2 text-sm text-gray-600">
+                    <li className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-pink-600"></div>
+                      6 profissionais
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-pink-600"></div>
+                      Tudo do plano Básico
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-pink-600"></div>
+                      Controle de comissões
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-pink-600"></div>
+                      Gestão de estoque
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-pink-600"></div>
+                      Relatórios avançados
+                    </li>
+                  </ul>
+                  <Button
+                    className="w-full bg-gradient-to-r from-pink-600 to-pink-700 hover:from-pink-700 hover:to-pink-800"
+                    onClick={() => window.open('https://pay.cakto.com.br/w2y2hgj_616200', '_blank')}
+                  >
+                    Assinar Plano Intermediário
+                  </Button>
+                </div>
+              </div>
+
+              {/* Plano Avançado */}
+              <div className="group relative overflow-hidden rounded-lg border-2 border-indigo-200 bg-white p-6 transition-all hover:border-indigo-400 hover:shadow-lg">
+                <div className="flex flex-col h-full">
+                  <div className="flex items-center justify-between mb-4">
+                    <Crown className="h-8 w-8 text-indigo-600" />
+                    <span className="text-sm font-medium text-indigo-600 bg-indigo-100 px-3 py-1 rounded-full">
+                      Avançado
+                    </span>
+                  </div>
+                  <div className="mb-4">
+                    <div className="text-3xl font-bold text-gray-900">R$ 99,90</div>
+                    <div className="text-sm text-gray-500">por mês</div>
+                  </div>
+                  <ul className="mb-6 flex-1 space-y-2 text-sm text-gray-600">
+                    <li className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-indigo-600"></div>
+                      Profissionais ilimitados
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-indigo-600"></div>
+                      Tudo do Intermediário
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-indigo-600"></div>
+                      Múltiplas unidades
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-indigo-600"></div>
+                      API de integração
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-indigo-600"></div>
+                      Suporte VIP 24/7
+                    </li>
+                  </ul>
+                  <Button
+                    className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800"
+                    onClick={() => window.open('https://pay.cakto.com.br/33qmtrg_616270', '_blank')}
+                  >
+                    Assinar Plano Avançado
+                  </Button>
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-6 p-4 bg-white rounded-lg border border-purple-200">
+              <p className="text-sm text-gray-600 text-center">
+                ✨ Após o pagamento ser confirmado, sua assinatura será ativada automaticamente por 30 dias. 
+                Todos os dados atuais serão mantidos.
+              </p>
             </div>
           </CardContent>
         </Card>

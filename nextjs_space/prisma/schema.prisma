@@ -34,6 +34,8 @@ model Salao {
   trial_end_date      DateTime?            // Data de fim do trial (30 dias após o início)
   is_trial_active     Boolean              @default(false) // Se está no período de trial
   subscription_start_date DateTime?        // Data de início da assinatura paga
+  subscription_end_date   DateTime?        // Data de expiração da assinatura (30 dias após pagamento)
+  cakto_transaction_id    String?          // ID da transação Cakto para identificação única
   data_criacao        DateTime             @default(now())
   data_atualizacao    DateTime             @updatedAt
 
@@ -526,4 +528,21 @@ model RelatorioFinanceiro {
   salao             Salao                 @relation(fields: [salao_id], references: [id], onDelete: Cascade)
 
   @@map("relatorios_financeiros")
+}
+
+// Modelo para histórico de transações Cakto (análise de conversão e retenção)
+model CaktoTransaction {
+  id                String                @id @default(cuid())
+  salao_id          String
+  transaction_id    String                @unique // ID da transação Cakto
+  plano             PlanoSalao            // Plano adquirido
+  valor             Decimal               @db.Decimal(10, 2)
+  status            String                // approved, refunded, etc
+  payment_date      DateTime              // Data do pagamento confirmado
+  customer_email    String?               // Email do cliente na Cakto
+  customer_name     String?               // Nome do cliente na Cakto
+  webhook_data      String?               @db.Text // JSON completo do webhook para análise
+  data_criacao      DateTime              @default(now())
+
+  @@map("cakto_transactions")
 }

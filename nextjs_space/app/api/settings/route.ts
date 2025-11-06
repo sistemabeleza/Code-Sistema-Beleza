@@ -40,7 +40,11 @@ export async function GET(request: NextRequest) {
         whatsapp_number: true,
         timezone: true,
         status: true,
-        plano: true
+        plano: true,
+        subscription_start_date: true,
+        subscription_end_date: true,
+        is_trial_active: true,
+        cakto_transaction_id: true
       }
     })
 
