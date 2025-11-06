@@ -75,31 +75,39 @@ export async function PUT(request: NextRequest) {
 
     const data = await request.json()
 
-    // Validação de documento (CPF ou CNPJ)
-    if (data.document_type && data.document) {
+    // Validação de documento (CPF ou CNPJ) - apenas se preenchido
+    if (data.document && data.document.trim()) {
       const cleanDocument = data.document.replace(/\D/g, '')
       
-      if (data.document_type === 'CPF') {
-        if (!validateCPF(cleanDocument)) {
-          return NextResponse.json(
-            { error: 'CPF inválido' },
-            { status: 400 }
-          )
+      // Se o documento foi preenchido, valida
+      if (cleanDocument) {
+        if (data.document_type === 'CPF') {
+          if (cleanDocument.length !== 11 || !validateCPF(cleanDocument)) {
+            return NextResponse.json(
+              { error: 'CPF inválido. Deve ter 11 dígitos' },
+              { status: 400 }
+            )
+          }
+        } else if (data.document_type === 'CNPJ') {
+          if (cleanDocument.length !== 14 || !validateCNPJ(cleanDocument)) {
+            return NextResponse.json(
+              { error: 'CNPJ inválido. Deve ter 14 dígitos' },
+              { status: 400 }
+            )
+          }
         }
-      } else if (data.document_type === 'CNPJ') {
-        if (!validateCNPJ(cleanDocument)) {
-          return NextResponse.json(
-            { error: 'CNPJ inválido' },
-            { status: 400 }
-          )
-        }
+        data.document = cleanDocument
+      } else {
+        // Se o campo foi enviado vazio, define como null
+        data.document = null
       }
-      
-      data.document = cleanDocument
+    } else {
+      // Campo vazio ou não enviado, define como null
+      data.document = null
     }
 
-    // Validação de WhatsApp
-    if (data.whatsapp_number) {
+    // Validação de WhatsApp - apenas se preenchido
+    if (data.whatsapp_number && data.whatsapp_number.trim()) {
       const whatsappValidation = validateAndNormalizeWhatsApp(data.whatsapp_number)
       if (!whatsappValidation.valid) {
         return NextResponse.json(
@@ -108,6 +116,8 @@ export async function PUT(request: NextRequest) {
         )
       }
       data.whatsapp_number = whatsappValidation.normalized
+    } else {
+      data.whatsapp_number = null
     }
 
     // Validação de slug (único)

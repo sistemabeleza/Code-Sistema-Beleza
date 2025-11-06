@@ -59,21 +59,23 @@ export default function ConfiguracoesPage() {
   }
 
   async function salvar() {
-    if (!formData.nome) {
-      toast.error('Nome é obrigatório')
+    if (!formData.nome || formData.nome.trim() === '') {
+      toast.error('Nome do estabelecimento é obrigatório')
       return
     }
 
-    // Validação de documento
-    if (formData.document) {
+    // Validação de documento - apenas se preenchido
+    if (formData.document && formData.document.trim()) {
       const cleanDoc = formData.document.replace(/\D/g, '')
-      if (formData.document_type === 'CPF' && cleanDoc.length !== 11) {
-        toast.error('CPF deve ter 11 dígitos')
-        return
-      }
-      if (formData.document_type === 'CNPJ' && cleanDoc.length !== 14) {
-        toast.error('CNPJ deve ter 14 dígitos')
-        return
+      if (cleanDoc.length > 0) {
+        if (formData.document_type === 'CPF' && cleanDoc.length !== 11) {
+          toast.error('CPF deve ter exatamente 11 dígitos')
+          return
+        }
+        if (formData.document_type === 'CNPJ' && cleanDoc.length !== 14) {
+          toast.error('CNPJ deve ter exatamente 14 dígitos')
+          return
+        }
       }
     }
 
@@ -149,7 +151,7 @@ export default function ConfiguracoesPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="docType">Tipo de Documento</Label>
                 <Select 
@@ -166,7 +168,7 @@ export default function ConfiguracoesPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="document">{formData.document_type}</Label>
+                <Label htmlFor="document">{formData.document_type} (opcional)</Label>
                 <Input
                   id="document"
                   value={formData.document}
@@ -176,7 +178,7 @@ export default function ConfiguracoesPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="telefone">Telefone</Label>
                 <Input

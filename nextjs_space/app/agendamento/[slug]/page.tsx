@@ -254,8 +254,8 @@ export default function AgendamentoPublicoPage() {
       {/* Header */}
       <div className="bg-white border-b">
         <div className="container max-w-4xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex-1">
               {salao.logo && (
                 <img src={salao.logo} alt={salao.nome} className="h-12 mb-2" />
               )}
@@ -266,18 +266,34 @@ export default function AgendamentoPublicoPage() {
             </div>
             <div className="flex gap-2">
               {salao.instagram_url && (
-                <Button variant="outline" size="sm" asChild>
-                  <a href={salao.instagram_url} target="_blank" rel="noopener noreferrer">
-                    <Instagram className="h-4 w-4" />
-                  </a>
-                </Button>
+                <a 
+                  href={salao.instagram_url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center rounded-md h-10 w-10 transition-all hover:scale-105"
+                  style={{
+                    background: 'linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)',
+                    color: 'white'
+                  }}
+                  title="Instagram"
+                >
+                  <Instagram className="h-5 w-5" />
+                </a>
               )}
               {salao.whatsapp_url && (
-                <Button variant="outline" size="sm" asChild>
-                  <a href={salao.whatsapp_url} target="_blank" rel="noopener noreferrer">
-                    <MessageCircle className="h-4 w-4" />
-                  </a>
-                </Button>
+                <a 
+                  href={salao.whatsapp_url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center rounded-md h-10 w-10 transition-all hover:scale-105"
+                  style={{
+                    background: '#25D366',
+                    color: 'white'
+                  }}
+                  title="WhatsApp"
+                >
+                  <MessageCircle className="h-5 w-5" />
+                </a>
               )}
             </div>
           </div>
@@ -288,14 +304,14 @@ export default function AgendamentoPublicoPage() {
       <div className="container max-w-4xl mx-auto px-4 py-8">
         {/* Breadcrumb de progresso */}
         {step !== 'sucesso' && (
-          <div className="mb-6 flex items-center justify-center gap-2 text-sm">
-            <Badge variant={step === 'servico' ? 'default' : 'secondary'}>1. Serviço</Badge>
-            <span>→</span>
-            <Badge variant={step === 'profissional' ? 'default' : 'secondary'}>2. Profissional</Badge>
-            <span>→</span>
-            <Badge variant={step === 'data' || step === 'horario' ? 'default' : 'secondary'}>3. Data/Hora</Badge>
-            <span>→</span>
-            <Badge variant={step === 'dados' ? 'default' : 'secondary'}>4. Confirmação</Badge>
+          <div className="mb-6 flex flex-wrap items-center justify-center gap-2 text-xs sm:text-sm">
+            <Badge variant={step === 'servico' ? 'default' : 'secondary'} className="whitespace-nowrap">1. Serviço</Badge>
+            <span className="hidden sm:inline">→</span>
+            <Badge variant={step === 'profissional' ? 'default' : 'secondary'} className="whitespace-nowrap">2. Profissional</Badge>
+            <span className="hidden sm:inline">→</span>
+            <Badge variant={step === 'data' || step === 'horario' ? 'default' : 'secondary'} className="whitespace-nowrap">3. Data/Hora</Badge>
+            <span className="hidden sm:inline">→</span>
+            <Badge variant={step === 'dados' ? 'default' : 'secondary'} className="whitespace-nowrap">4. Confirmação</Badge>
           </div>
         )}
 
@@ -409,13 +425,13 @@ export default function AgendamentoPublicoPage() {
                 <p className="mt-4 text-muted-foreground">Carregando horários...</p>
               </div>
             ) : slots.length > 0 ? (
-              <div className="grid grid-cols-3 md:grid-cols-4 gap-3 max-w-2xl mx-auto">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3 max-w-2xl mx-auto">
                 {slots.map((slot) => (
                   <Button
                     key={slot}
                     variant="outline"
                     onClick={() => selecionarHorario(slot)}
-                    className="h-12"
+                    className="h-12 text-sm sm:text-base"
                   >
                     {slot}
                   </Button>
