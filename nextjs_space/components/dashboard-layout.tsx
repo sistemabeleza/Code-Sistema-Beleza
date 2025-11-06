@@ -197,15 +197,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             )}
           </nav>
           
-          {/* Botão Discreto Admin no Rodapé - Mobile */}
+          {/* Botão Admin Desenvolvedor - Mobile */}
           <div className="p-4 border-t border-gray-200 mt-auto">
             <Link
               href="/admin/login"
               onClick={() => setSidebarOpen(false)}
-              className="flex items-center justify-center p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-50"
+              className="flex items-center justify-center p-3 text-red-600 hover:text-red-700 transition-colors rounded-lg bg-red-50 hover:bg-red-100 border border-red-200"
               title="Painel Desenvolvedor"
             >
-              <Wrench className="h-4 w-4" />
+              <Wrench className="h-5 w-5" />
             </Link>
           </div>
         </div>
