@@ -21,7 +21,8 @@ import {
   X,
   Bell,
   ExternalLink,
-  Percent
+  Percent,
+  Wrench
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -195,6 +196,18 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               </button>
             )}
           </nav>
+          
+          {/* Botão Discreto Admin no Rodapé - Mobile */}
+          <div className="p-4 border-t border-gray-200 mt-auto">
+            <Link
+              href="/admin/login"
+              onClick={() => setSidebarOpen(false)}
+              className="flex items-center justify-center p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-50"
+              title="Painel Desenvolvedor"
+            >
+              <Wrench className="h-4 w-4" />
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -240,6 +253,17 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </button>
           )}
         </nav>
+        
+        {/* Botão Discreto Admin no Rodapé - Desktop */}
+        <div className="p-4 border-t border-gray-200 mt-auto">
+          <Link
+            href="/admin/login"
+            className="flex items-center justify-center p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-50"
+            title="Painel Desenvolvedor"
+          >
+            <Wrench className="h-4 w-4" />
+          </Link>
+        </div>
       </div>
 
       {/* Main content */}
