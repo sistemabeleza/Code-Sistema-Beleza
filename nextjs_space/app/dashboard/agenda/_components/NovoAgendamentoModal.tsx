@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { toast } from 'sonner'
-import { Loader2, Plus } from 'lucide-react'
+import { Loader2, Plus, UserPlus, X } from 'lucide-react'
 
 interface Cliente {
   id: string
@@ -57,6 +57,8 @@ export default function NovoAgendamentoModal({
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [profissionais, setProfissionais] = useState<Profissional[]>([])
   const [servicos, setServicos] = useState<Servico[]>([])
+  const [mostrarFormNovoCliente, setMostrarFormNovoCliente] = useState(false)
+  const [loadingNovoCliente, setLoadingNovoCliente] = useState(false)
 
   const [formData, setFormData] = useState({
     cliente_id: '',
@@ -65,6 +67,12 @@ export default function NovoAgendamentoModal({
     data: dataInicial,
     hora_inicio: '',
     observacoes: ''
+  })
+
+  const [novoClienteData, setNovoClienteData] = useState({
+    nome: '',
+    telefone: '',
+    email: ''
   })
 
   useEffect(() => {
@@ -98,6 +106,42 @@ export default function NovoAgendamentoModal({
       }
     } catch (error) {
       console.error('Erro ao carregar dados:', error)
+    }
+  }
+
+  const handleCriarNovoCliente = async () => {
+    if (!novoClienteData.nome || !novoClienteData.telefone) {
+      toast.error('Nome e telefone são obrigatórios')
+      return
+    }
+
+    setLoadingNovoCliente(true)
+    try {
+      const res = await fetch('/api/clientes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(novoClienteData)
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        toast.success('Cliente cadastrado com sucesso!')
+        // Adiciona o novo cliente à lista
+        setClientes(prev => [...prev, data])
+        // Seleciona o novo cliente
+        setFormData(prev => ({ ...prev, cliente_id: data.id }))
+        // Limpa o formulário e fecha
+        setNovoClienteData({ nome: '', telefone: '', email: '' })
+        setMostrarFormNovoCliente(false)
+      } else {
+        toast.error(data.error || 'Erro ao cadastrar cliente')
+      }
+    } catch (error) {
+      console.error('Erro:', error)
+      toast.error('Erro ao cadastrar cliente')
+    } finally {
+      setLoadingNovoCliente(false)
     }
   }
 
@@ -151,24 +195,115 @@ export default function NovoAgendamentoModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="cliente">Cliente*</Label>
-              <Select
-                value={formData.cliente_id || undefined}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, cliente_id: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um cliente" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clientes.map((cliente) => (
-                    <SelectItem key={cliente.id} value={cliente.id}>
-                      {cliente.nome} - {cliente.telefone}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="cliente">Cliente*</Label>
+                {!mostrarFormNovoCliente && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setMostrarFormNovoCliente(true)}
+                    className="h-7 text-xs"
+                  >
+                    <UserPlus className="mr-1 h-3 w-3" />
+                    Novo Cliente
+                  </Button>
+                )}
+              </div>
+
+              {!mostrarFormNovoCliente ? (
+                <Select
+                  value={formData.cliente_id || undefined}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, cliente_id: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um cliente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clientes.map((cliente) => (
+                      <SelectItem key={cliente.id} value={cliente.id}>
+                        {cliente.nome} - {cliente.telefone}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="border rounded-lg p-3 bg-muted/30 space-y-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium">Cadastrar Novo Cliente</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setMostrarFormNovoCliente(false)
+                        setNovoClienteData({ nome: '', telefone: '', email: '' })
+                      }}
+                      className="h-6 w-6 p-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div>
+                      <Label className="text-xs">Nome*</Label>
+                      <Input
+                        value={novoClienteData.nome}
+                        onChange={(e) =>
+                          setNovoClienteData({ ...novoClienteData, nome: e.target.value })
+                        }
+                        placeholder="Nome completo"
+                        className="h-8"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Telefone*</Label>
+                      <Input
+                        value={novoClienteData.telefone}
+                        onChange={(e) =>
+                          setNovoClienteData({ ...novoClienteData, telefone: e.target.value })
+                        }
+                        placeholder="(00) 00000-0000"
+                        className="h-8"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Email (opcional)</Label>
+                      <Input
+                        type="email"
+                        value={novoClienteData.email}
+                        onChange={(e) =>
+                          setNovoClienteData({ ...novoClienteData, email: e.target.value })
+                        }
+                        placeholder="email@exemplo.com"
+                        className="h-8"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={handleCriarNovoCliente}
+                      disabled={loadingNovoCliente}
+                      className="w-full h-8"
+                      size="sm"
+                    >
+                      {loadingNovoCliente ? (
+                        <>
+                          <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                          Salvando...
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="mr-2 h-3 w-3" />
+                          Salvar Cliente
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
