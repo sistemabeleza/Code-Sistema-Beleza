@@ -1,126 +1,144 @@
-╔══════════════════════════════════════════════════════════════════════╗
-║                                                                      ║
-║            🚀 COMO FAZER O PUSH INICIAL - SUPER SIMPLES 🚀           ║
-║                                                                      ║
-╚══════════════════════════════════════════════════════════════════════╝
+╔══════════════════════════════════════════════════════════════════════════╗
+║          COMO MANTER TUDO SEGURO - GUIA DEFINITIVO                      ║
+╚══════════════════════════════════════════════════════════════════════════╝
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+═══════════════════════════════════════════════════════════════════════════
+📤 1. QUANDO MODIFICAR O CÓDIGO
+═══════════════════════════════════════════════════════════════════════════
 
-📍 ONDE EXECUTAR?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Execute este comando para enviar para o GitHub:
 
-Você está conversando comigo aqui no Abacus.AI, certo?
+    cd /home/ubuntu/sistema_salao_beleza
+    ./backup-auto-github.sh
 
-Aqui mesmo, nesta conversa, existe um TERMINAL (console) onde você
-pode executar comandos. Vou te mostrar como usá-lo!
+Isso envia:
+   ✅ Código (frontend, backend, APIs)
+   ✅ Configurações
+   ✅ Scripts
+   ✅ Documentação
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+❌ NÃO envia dados dos clientes (eles ficam seguros no servidor)
 
-🎯 PASSO A PASSO
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+═══════════════════════════════════════════════════════════════════════════
+💾 2. BACKUP DOS DADOS DOS CLIENTES
+═══════════════════════════════════════════════════════════════════════════
 
-1️⃣  Me peça para executar os comandos
+🤖 OPÇÃO A: Backup Manual (Quando Quiser)
+─────────────────────────────────────────────
+cd /home/ubuntu/sistema_salao_beleza/nextjs_space
+yarn tsx scripts/backup-database.ts
 
-    Você pode simplesmente digitar aqui na nossa conversa:
-    
-    "Execute estes comandos:
-     cd /home/ubuntu/sistema_salao_beleza
-     ./push-github.sh"
+Isso salva TUDO em: /home/ubuntu/backups/database/
 
-2️⃣  Eu vou executar e pedir suas credenciais
 
-    Quando o script pedir, você vai ver algo assim:
-    
-    Username for 'https://github.com': 
-    
-    Digite seu usuário do GitHub (exemplo: sistemabeleza)
+☁️  OPÇÃO B: Backup em Nuvem (Recomendado)
+─────────────────────────────────────────────
+1. Instalar Google Drive:
+   curl https://rclone.org/install.sh | sudo bash
+   rclone config
+   • Nome: gdrive
+   • Storage: drive
+   • Autorizar no browser
 
-3️⃣  Depois vai pedir a senha
+2. Enviar backups:
+   bash /home/ubuntu/sistema_salao_beleza/scripts/backup-to-gdrive.sh
 
-    Password for 'https://sistemabeleza@github.com':
-    
-    ⚠️ IMPORTANTE: NÃO digite sua senha do GitHub!
-    ⚠️ Cole o TOKEN que você criou (ghp_...)
 
-4️⃣  Pronto! O código será enviado!
+💻 OPÇÃO C: Download Manual (Mais Simples)
+─────────────────────────────────────────────
+Use FileZilla, WinSCP ou qualquer cliente SFTP:
+   1. Conecte no servidor
+   2. Baixe a pasta: /home/ubuntu/backups/
+   3. Salve em HD externo ou Google Drive pessoal
+   4. Faça isso 1x por semana
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+═══════════════════════════════════════════════════════════════════════════
+📊 RESUMO: O QUE VAI PARA ONDE
+═══════════════════════════════════════════════════════════════════════════
 
-💡 FORMA MAIS FÁCIL
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+┌───────────────────┬─────────────────┬────────────────────────────────┐
+│ O QUE             │ ONDE VAI        │ COMO                           │
+├───────────────────┼─────────────────┼────────────────────────────────┤
+│ Código            │ GitHub          │ ./backup-auto-github.sh        │
+│ Dados Clientes    │ Backups Locais  │ yarn tsx scripts/backup-*.ts   │
+│ Extra Segurança   │ Google Drive    │ scripts/backup-to-gdrive.sh    │
+└───────────────────┴─────────────────┴────────────────────────────────┘
 
-Na verdade, você pode me pedir:
+═══════════════════════════════════════════════════════════════════════════
+✅ CHECKLIST SEMANAL
+═══════════════════════════════════════════════════════════════════════════
 
-"Por favor, me ajude a fazer o push para o GitHub"
+Segunda-feira:
+   [ ] Fazer backup dos dados:
+       cd /home/ubuntu/sistema_salao_beleza/nextjs_space
+       yarn tsx scripts/backup-database.ts
 
-E eu vou te guiar passo a passo, executando os comandos e
-pedindo apenas as informações necessárias!
+   [ ] Enviar para Google Drive (se configurado):
+       bash scripts/backup-to-gdrive.sh
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   [ ] OU baixar backup manualmente via SFTP
 
-📋 RESUMO
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Quando modificar código:
+   [ ] Enviar para GitHub:
+       cd /home/ubuntu/sistema_salao_beleza
+       ./backup-auto-github.sh
 
-Você precisa ter:
-✅ Token do GitHub criado (ghp_...)
-✅ Seu usuário do GitHub
+═══════════════════════════════════════════════════════════════════════════
+🆘 E SE ALGO DER ERRADO?
+═══════════════════════════════════════════════════════════════════════════
 
-Como fazer:
-1. Me peça para fazer o push
-2. Eu executo o script
-3. Você fornece: usuário e token
-4. Pronto! Código no GitHub!
+Se perder dados:
+   1. cd /home/ubuntu/sistema_salao_beleza
+   2. bash scripts/restore.sh
+   3. Escolha qual backup restaurar
+   4. Pronto! Tudo volta ao normal!
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Se perder código:
+   1. Acesse: https://github.com/sistemabeleza/Code-Sistema-Beleza
+   2. Clone o repositório
+   3. Instale as dependências
+   4. Configure o .env
+   5. Pronto!
 
-🎯 QUER FAZER AGORA?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+═══════════════════════════════════════════════════════════════════════════
+📞 COMANDOS RÁPIDOS DE REFERÊNCIA
+═══════════════════════════════════════════════════════════════════════════
 
-Basta me dizer:
+Ver backups disponíveis:
+   ls -lh /home/ubuntu/backups/database/
 
-"Tenho o token pronto, vamos fazer o push agora!"
+Ver status do sistema:
+   bash /home/ubuntu/sistema_salao_beleza/scripts/verify-backups.sh
 
-E eu faço tudo para você! 😊
+Fazer backup agora:
+   cd /home/ubuntu/sistema_salao_beleza/nextjs_space
+   yarn tsx scripts/backup-database.ts
 
-╚══════════════════════════════════════════════════════════════════════╝
+Enviar código para GitHub:
+   cd /home/ubuntu/sistema_salao_beleza
+   ./backup-auto-github.sh
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+═══════════════════════════════════════════════════════════════════════════
+💡 DICAS IMPORTANTES
+═══════════════════════════════════════════════════════════════════════════
 
-📝 EXEMPLO DE COMO VAI ACONTECER
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Código vai para GitHub, dados ficam em backups
+2. Faça backup dos dados TODA SEMANA no mínimo
+3. Mantenha backups em 2+ lugares diferentes
+4. Teste restaurar um backup 1x por mês
+5. NUNCA compartilhe o arquivo .env
+6. NUNCA envie dados de clientes para GitHub
 
-VOCÊ: "Tenho o token pronto, vamos fazer o push!"
+═══════════════════════════════════════════════════════════════════════════
+🎯 VOCÊ ESTÁ PROTEGIDO!
+═══════════════════════════════════════════════════════════════════════════
 
-EU: "Ótimo! Qual é o seu usuário do GitHub?"
+✅ Código seguro no GitHub
+✅ Backups locais configurados
+✅ Scripts prontos para usar
+✅ Documentação completa
 
-VOCÊ: "sistemabeleza"
+Agora é só seguir a rotina semanal! 🎉
 
-EU: "Perfeito! Agora cole aqui o token que você criou (ghp_...)"
+═══════════════════════════════════════════════════════════════════════════
 
-VOCÊ: "ghp_1A2B3C4D5E6F7G8H9I0J1K2L3M4N5O6P7Q8R"
-
-EU: [Executo o push com suas credenciais]
-
-    📤 Enviando para GitHub...
-    ✅ SUCESSO! Código enviado!
-    🌐 https://github.com/sistemabeleza/Code-Sistema-Beleza
-
-PRONTO! Seu código está no GitHub! 🎉
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-🎯 É ASSIM QUE FUNCIONA!
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Você NÃO precisa:
-❌ Instalar nada no seu computador
-❌ Abrir terminal do Windows/Linux/Mac
-❌ Configurar SSH ou Git
-❌ Saber comandos complexos
-
-Você SÓ precisa:
-✅ Criar o token no GitHub
-✅ Me dar o usuário e token
-✅ EU FAÇO TODO O RESTO! 😊
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
