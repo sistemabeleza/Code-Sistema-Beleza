@@ -21,7 +21,8 @@ import {
   X,
   Bell,
   ExternalLink,
-  Percent
+  Percent,
+  Shield
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -50,6 +51,7 @@ const navigation = [
   { name: 'Relatórios', href: '/dashboard/relatorios', icon: BarChart3 },
   { name: 'Comissões', href: '/dashboard/relatorios/comissoes', icon: Percent },
   { name: 'Configurações', href: '/dashboard/configuracoes', icon: Settings },
+  { name: 'Painel Admin', href: '/dashboard/admin', icon: Shield, adminOnly: true },
 ]
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
@@ -162,7 +164,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
           
           <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
-            {navigation.map((item) => {
+            {navigation
+              .filter((item: any) => {
+                // Se o item é adminOnly, só mostrar para usuários ADMIN
+                if (item.adminOnly) {
+                  return session?.user?.tipo === 'ADMIN'
+                }
+                return true
+              })
+              .map((item) => {
               const isActive = pathname === item.href
               return (
                 <Link
@@ -211,7 +221,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
         
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-          {navigation.map((item) => {
+          {navigation
+            .filter((item: any) => {
+              // Se o item é adminOnly, só mostrar para usuários ADMIN
+              if (item.adminOnly) {
+                return session?.user?.tipo === 'ADMIN'
+              }
+              return true
+            })
+            .map((item) => {
             const isActive = pathname === item.href
             return (
               <Link
