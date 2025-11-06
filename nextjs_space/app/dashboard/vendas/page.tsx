@@ -3,9 +3,8 @@
 
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ShoppingBag, Plus, Wrench } from 'lucide-react'
+import { ShoppingBag, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import Link from 'next/link'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -502,17 +501,6 @@ export default function VendasPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Botão Admin Desenvolvedor - Rodapé */}
-      <div className="fixed bottom-4 right-4">
-        <Link
-          href="/admin/login"
-          className="flex items-center justify-center p-4 text-red-600 hover:text-red-700 transition-all rounded-full bg-red-50 hover:bg-red-100 border-2 border-red-600 shadow-lg hover:shadow-xl"
-          title="Painel Desenvolvedor"
-        >
-          <Wrench className="h-6 w-6" />
-        </Link>
-      </div>
     </div>
   )
 }
