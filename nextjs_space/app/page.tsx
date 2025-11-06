@@ -198,24 +198,30 @@ export default function HomePage() {
               </div>
               <span className="text-2xl font-bold text-gray-900">Sistema Beleza</span>
             </div>
-            <nav className="hidden md:flex items-center space-x-8">
-              <a href="#funcionalidades" className="text-gray-600 hover:text-gray-900 transition">Funcionalidades</a>
-              <a href="#planos" className="text-gray-600 hover:text-gray-900 transition">Planos</a>
-              <a href="#depoimentos" className="text-gray-600 hover:text-gray-900 transition">Depoimentos</a>
-              <a href="#faq" className="text-gray-600 hover:text-gray-900 transition">FAQ</a>
+            
+            <div className="flex items-center gap-4">
+              {/* Botão Entrar - Visível em todos os dispositivos */}
               <Link
                 href="/auth/login"
-                className="text-gray-600 hover:text-gray-900 transition font-medium"
+                className="px-4 py-2 text-purple-600 hover:text-purple-700 border border-purple-600 hover:border-purple-700 rounded-full transition-all font-medium text-sm md:text-base"
               >
                 Entrar
               </Link>
-              <Link
-                href="/auth/signup"
-                className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full hover:shadow-lg transition-all font-medium"
-              >
-                Começar Grátis
-              </Link>
-            </nav>
+              
+              {/* Menu Desktop */}
+              <nav className="hidden md:flex items-center space-x-8">
+                <a href="#funcionalidades" className="text-gray-600 hover:text-gray-900 transition">Funcionalidades</a>
+                <a href="#planos" className="text-gray-600 hover:text-gray-900 transition">Planos</a>
+                <a href="#depoimentos" className="text-gray-600 hover:text-gray-900 transition">Depoimentos</a>
+                <a href="#faq" className="text-gray-600 hover:text-gray-900 transition">FAQ</a>
+                <Link
+                  href="/auth/signup"
+                  className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full hover:shadow-lg transition-all font-medium"
+                >
+                  Começar Grátis
+                </Link>
+              </nav>
+            </div>
           </div>
         </div>
       </header>
