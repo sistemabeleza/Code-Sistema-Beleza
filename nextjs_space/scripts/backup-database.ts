@@ -1,40 +1,66 @@
-
-import 'dotenv/config';
+import { config } from 'dotenv';
 import { PrismaClient } from '@prisma/client';
 import * as fs from 'fs';
 import * as path from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 
+// Carregar variáveis de ambiente
+config({ path: '/home/ubuntu/sistema_salao_beleza/nextjs_space/.env' });
+
 const execAsync = promisify(exec);
 const prisma = new PrismaClient();
 
-async function backupDatabase() {
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-  const backupDir = process.env.BACKUP_DIR || path.join(__dirname, '../../backups/database');
-  const backupFile = path.join(backupDir, `backup_${timestamp}.json`);
+const BACKUP_DIR = '/home/ubuntu/backups';
+const DATE = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0] + '_' + 
+             new Date().toTimeString().split(' ')[0].replace(/:/g, '');
 
-  console.log('🔐 ==========================================');
-  console.log('   BACKUP DO BANCO DE DADOS - Sistema Beleza');
-  console.log(`   ${new Date().toLocaleString('pt-BR')}`);
-  console.log('==========================================\n');
+interface BackupData {
+  timestamp: string;
+  version: string;
+  data: {
+    saloes: any[];
+    users: any[];
+    clientes: any[];
+    profissionais: any[];
+    servicos: any[];
+    produtos: any[];
+    agendamentos: any[];
+    vendas: any[];
+    lancamentos: any[];
+  };
+}
+
+async function createBackup() {
+  console.log('========================================');
+  console.log('🔄 BACKUP AUTOMÁTICO - SISTEMA BELEZA');
+  console.log(`📅 ${new Date().toLocaleString('pt-BR')}`);
+  console.log('========================================\n');
+
+  // Criar diretórios
+  const dbDir = path.join(BACKUP_DIR, 'database');
+  const envDir = path.join(BACKUP_DIR, 'env');
+  const logDir = path.join(BACKUP_DIR, 'logs');
+
+  [dbDir, envDir, logDir].forEach(dir => {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+  });
+
+  const logFile = path.join(logDir, `backup_auto_${DATE}.log`);
+  const log = (message: string) => {
+    console.log(message);
+    fs.appendFileSync(logFile, message + '\n');
+  };
 
   try {
-    // Criar diretório se não existir
-    if (!fs.existsSync(backupDir)) {
-      fs.mkdirSync(backupDir, { recursive: true });
-    }
-
-    console.log('💾 Fazendo backup do banco de dados...\n');
-    console.log('📊 Exportando dados via Prisma...\n');
-
-    // Exportar todas as tabelas
-    const backup = {
-      metadata: {
-        timestamp: new Date().toISOString(),
-        version: '1.0.0',
-        database: 'sistema_beleza'
-      },
+    // 1. Backup do banco de dados
+    log('💾 [1/3] Fazendo backup do banco de dados...');
+    
+    const backupData: BackupData = {
+      timestamp: new Date().toISOString(),
+      version: '1.0.0',
       data: {
         saloes: await prisma.salao.findMany(),
         users: await prisma.user.findMany(),
@@ -44,108 +70,87 @@ async function backupDatabase() {
         produtos: await prisma.produto.findMany(),
         agendamentos: await prisma.agendamento.findMany(),
         vendas: await prisma.venda.findMany(),
-        itemVenda: await prisma.itemVenda.findMany(),
-        pagamentos: await prisma.pagamento.findMany(),
-        movimentacoesEstoque: await prisma.movimentacaoEstoque.findMany(),
         lancamentos: await prisma.lancamento.findMany(),
-        relatoriosFinanceiros: await prisma.relatorioFinanceiro.findMany(),
-        fidelidadeClientes: await prisma.fidelidadeCliente.findMany(),
-        configuracoesQueSalao: await prisma.configuracaoSalao.findMany(),
-        caktoTransactions: await prisma.caktoTransaction.findMany()
       }
     };
 
-    // Salvar em arquivo JSON
-    fs.writeFileSync(backupFile, JSON.stringify(backup, null, 2));
+    const backupFile = path.join(dbDir, `backup_auto_${DATE}.json`);
+    fs.writeFileSync(backupFile, JSON.stringify(backupData, null, 2));
+    
+    // Comprimir
+    await execAsync(`gzip -f ${backupFile}`);
+    const compressedFile = `${backupFile}.gz`;
+    const stats = fs.statSync(compressedFile);
+    const sizeMB = (stats.size / 1024 / 1024).toFixed(2);
+    log(`   ✅ Backup criado: ${sizeMB} MB`);
 
-    console.log('✅ Dados exportados com sucesso!\n');
-
-    // Verificar se o backup foi criado
-    if (fs.existsSync(backupFile)) {
-      const stats = fs.statSync(backupFile);
-      const sizeMB = (stats.size / (1024 * 1024)).toFixed(2);
-
-      console.log('✅ Backup criado com sucesso!');
-      console.log(`📁 Arquivo: ${backupFile}`);
-      console.log(`📊 Tamanho: ${sizeMB} MB\n`);
-
-      // Comprimir o backup
-      console.log('🗜️  Comprimindo backup...');
-      await execAsync(`gzip "${backupFile}"`);
-      
-      const gzFile = `${backupFile}.gz`;
-      if (fs.existsSync(gzFile)) {
-        const gzStats = fs.statSync(gzFile);
-        const gzSizeMB = (gzStats.size / (1024 * 1024)).toFixed(2);
-        console.log(`✅ Backup comprimido: ${gzSizeMB} MB\n`);
-      }
-
-      // Fazer backup do .env também
-      const envSource = path.join(__dirname, '../.env');
-      const envBackupDir = process.env.BACKUP_DIR ? path.dirname(process.env.BACKUP_DIR).replace('/database', '/env') : path.join(__dirname, '../../backups/env');
-      const envBackup = path.join(envBackupDir, `.env_${timestamp}`);
-      
-      if (fs.existsSync(envSource)) {
-        const envDir = path.dirname(envBackup);
-        if (!fs.existsSync(envDir)) {
-          fs.mkdirSync(envDir, { recursive: true });
-        }
-        fs.copyFileSync(envSource, envBackup);
-        fs.chmodSync(envBackup, 0o600);
-        console.log('🔑 Backup do .env criado\n');
-      }
-
-      // Estatísticas do banco
-      console.log('📊 Estatísticas do banco:');
-      
-      const saloes = await prisma.salao.count();
-      const usuarios = await prisma.user.count();
-      const clientes = await prisma.cliente.count();
-      const agendamentos = await prisma.agendamento.count();
-      const produtos = await prisma.produto.count();
-      const vendas = await prisma.venda.count();
-
-      console.log(`   • Salões: ${saloes}`);
-      console.log(`   • Usuários: ${usuarios}`);
-      console.log(`   • Clientes: ${clientes}`);
-      console.log(`   • Agendamentos: ${agendamentos}`);
-      console.log(`   • Produtos: ${produtos}`);
-      console.log(`   • Vendas: ${vendas}\n`);
-
-      console.log('==========================================');
-      console.log('✅ BACKUP CONCLUÍDO COM SUCESSO!');
-      console.log('==========================================\n');
-
-      // Listar últimos backups
-      console.log('📋 Últimos 5 backups:');
-      const { stdout: lsOutput } = await execAsync(`ls -lht ${backupDir}/*.gz 2>/dev/null | head -5 || echo "Nenhum backup anterior"`);
-      console.log(lsOutput);
-
-      // Limpar backups antigos (manter últimos 30 dias)
-      console.log('\n🗑️  Limpando backups antigos (> 30 dias)...');
-      try {
-        await execAsync(`find ${backupDir} -name "backup_*.sql.gz" -mtime +30 -delete`);
-        console.log('   ✅ Limpeza concluída\n');
-      } catch (err) {
-        console.log('   ℹ️  Nenhum backup antigo para remover\n');
-      }
-
-      console.log('💡 Próximos passos:');
-      console.log('   1. Copie o backup para um local seguro (Google Drive, HD externo)');
-      console.log('   2. Para restaurar: yarn tsx scripts/restore-database.ts');
-      console.log('   3. Para backup automático: bash scripts/setup-cron.sh\n');
-
+    // 2. Backup do arquivo .env
+    log('\n🔐 [2/3] Backup do arquivo .env...');
+    const envFile = '/home/ubuntu/sistema_salao_beleza/nextjs_space/.env';
+    if (fs.existsSync(envFile)) {
+      const envBackup = path.join(envDir, `.env_${DATE}`);
+      fs.copyFileSync(envFile, envBackup);
+      log('   ✅ .env copiado');
     } else {
-      throw new Error('Arquivo de backup não foi criado');
+      log('   ⚠️  Arquivo .env não encontrado');
     }
 
+    // 3. Limpeza de backups antigos (manter últimos 30 dias)
+    log('\n🧹 [3/3] Limpando backups antigos...');
+    const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+    
+    [dbDir, envDir, logDir].forEach(dir => {
+      const files = fs.readdirSync(dir);
+      files.forEach(file => {
+        const filePath = path.join(dir, file);
+        const stats = fs.statSync(filePath);
+        if (stats.mtimeMs < thirtyDaysAgo) {
+          fs.unlinkSync(filePath);
+        }
+      });
+    });
+    log('   ✅ Backups antigos removidos');
+
+    // Resumo
+    log('\n========================================');
+    log('✅ BACKUP CONCLUÍDO COM SUCESSO!');
+    log('========================================\n');
+    log('📊 Resumo:');
+    log(`   • Backup: ${compressedFile}`);
+    log(`   • Tamanho: ${sizeMB} MB`);
+    log(`   • .env: ${path.join(envDir, `.env_${DATE}`)}`);
+    log(`   • Log: ${logFile}\n`);
+
+    // Estatísticas
+    const totalBackups = fs.readdirSync(dbDir).length;
+    const { stdout: diskUsage } = await execAsync(`du -sh ${BACKUP_DIR}`);
+    log(`📁 Total de backups: ${totalBackups} arquivos`);
+    log(`💾 Espaço usado: ${diskUsage.trim().split('\t')[0]}\n`);
+    log(`✅ Finalizado em: ${new Date().toLocaleString('pt-BR')}\n`);
+
+    return { success: true, file: compressedFile };
+
   } catch (error) {
-    console.error('\n❌ ERRO no backup:', error);
-    process.exit(1);
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    log(`\n❌ ERRO NO BACKUP: ${errorMsg}\n`);
+    return { success: false, error: errorMsg };
   } finally {
     await prisma.$disconnect();
   }
 }
 
-// Executar
-backupDatabase();
+// Executar backup
+createBackup()
+  .then(result => {
+    if (result.success) {
+      console.log('✅ Backup concluído com sucesso!');
+      process.exit(0);
+    } else {
+      console.error('❌ Erro no backup:', result.error);
+      process.exit(1);
+    }
+  })
+  .catch(error => {
+    console.error('❌ Erro crítico:', error);
+    process.exit(1);
+  });

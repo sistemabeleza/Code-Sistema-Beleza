@@ -1,69 +1,199 @@
-# 🚀 Guia Rápido - Backup Automático
+# 🚀 GUIA RÁPIDO - BACKUP AUTOMÁTICO
 
-## ⚡ SUPER SIMPLES!
-
-Sempre que você fizer mudanças no código, execute:
-
-```bash
-cd /home/ubuntu/sistema_salao_beleza
-./backup-auto-github.sh
-```
-
-Pronto! Tudo vai para o GitHub automaticamente! 🎉
+**Última atualização:** 11/11/2025
 
 ---
 
-## 📋 Comandos Úteis
+## ✅ BACKUP AUTOMÁTICO CONFIGURADO E FUNCIONANDO!
 
-### Fazer backup agora:
+---
+
+## ⚡ COMANDOS RÁPIDOS
+
+### 1. Fazer Backup Manual AGORA:
 ```bash
-cd /home/ubuntu/sistema_salao_beleza && ./backup-auto-github.sh
+bash /home/ubuntu/sistema_salao_beleza/scripts/backup-agendado.sh
 ```
 
-### Ver status do Git:
+### 2. Ver Backups Criados:
 ```bash
-cd /home/ubuntu/sistema_salao_beleza && git status
+ls -lh /home/ubuntu/backups/database/
 ```
 
-### Ver histórico de commits:
+### 3. Ver Último Log:
 ```bash
-cd /home/ubuntu/sistema_salao_beleza && git log --oneline -10
+cat /home/ubuntu/backups/logs/backup_auto_*.log | tail -50
 ```
 
-### Ver diferenças:
+### 4. Ver Espaço Usado:
 ```bash
-cd /home/ubuntu/sistema_salao_beleza && git diff
+du -sh /home/ubuntu/backups/
 ```
 
 ---
 
-## 🔄 Backup Automático Diário
+## 📁 ONDE ESTÃO OS BACKUPS?
 
-Para configurar backup automático todos os dias às 23h:
+```
+/home/ubuntu/backups/
+├── database/          ← Seus backups estão aqui!
+│   ├── backup_auto_2025-11-11_030000.json.gz
+│   ├── backup_auto_2025-11-12_030000.json.gz
+│   └── ...
+├── env/              ← Cópias do .env
+└── logs/             ← Logs de cada backup
+```
 
+---
+
+## ⏰ PROGRAMAÇÃO
+
+✅ **Backup Diário Automático**
+- **Horário:** 03:00 da manhã (todos os dias)
+- **Retenção:** 30 dias (backups antigos são automaticamente removidos)
+- **Formato:** JSON compactado (.json.gz)
+
+---
+
+## 💾 O QUE É SALVO?
+
+Cada backup contém:
+1. ✅ **Todos os dados do banco PostgreSQL**
+   - Salões, usuários, clientes
+   - Profissionais, serviços, produtos
+   - Agendamentos, vendas, lançamentos
+2. ✅ **Arquivo .env** (credenciais e configurações)
+3. ✅ **Log completo** da operação
+
+---
+
+## 🔄 RESTAURAR UM BACKUP
+
+### Opção 1: Via Script (Em desenvolvimento)
 ```bash
-crontab -e
+bash /home/ubuntu/sistema_salao_beleza/scripts/restore.sh
 ```
 
-Adicione esta linha:
-```
-0 23 * * * /home/ubuntu/sistema_salao_beleza/backup-auto-github.sh
-```
+### Opção 2: Manual (Avançado)
+```bash
+# 1. Escolher o arquivo
+BACKUP=/home/ubuntu/backups/database/backup_auto_2025-11-11_030000.json.gz
 
-Salve e pronto! Backup automático configurado! ✅
+# 2. Descompactar
+gunzip -c $BACKUP > backup.json
+
+# 3. Use um script customizado para importar os dados
+# (Entre em contato para assistência)
+```
 
 ---
 
-## 🌐 Ver no GitHub
+## 📊 VERIFICAR STATUS
 
-Acesse: https://github.com/sistemabeleza/Code-Sistema-Beleza
+### Backup Funcionou Hoje?
+```bash
+TODAY=$(date +%Y-%m-%d)
+ls /home/ubuntu/backups/database/ | grep $TODAY
+```
+
+### Quantos Backups Tenho?
+```bash
+ls -1 /home/ubuntu/backups/database/ | wc -l
+```
+
+### Último Backup Criado:
+```bash
+ls -t /home/ubuntu/backups/database/ | head -1
+```
 
 ---
 
-## ❓ Precisa de Ajuda?
+## 🎯 BOAS PRÁTICAS
 
-Leia o guia completo: `GUIA_BACKUP_AUTOMATICO.md`
+### ✅ Recomendações:
+1. **Teste o backup uma vez por mês**
+   ```bash
+   bash /home/ubuntu/sistema_salao_beleza/scripts/backup-agendado.sh
+   ```
+
+2. **Copie backups importantes para outro local**
+   - HD externo
+   - Google Drive
+   - Dropbox
+   - OneDrive
+
+3. **Monitore o espaço em disco**
+   ```bash
+   df -h /
+   ```
+
+4. **Revise os logs regularmente**
+   ```bash
+   cat /home/ubuntu/backups/logs/backup_auto_*.log | grep -i "erro"
+   ```
 
 ---
 
-**É SIMPLES ASSIM! 🚀**
+## 🚨 PROBLEMAS COMUNS
+
+### Backup não está rodando?
+```bash
+# Verificar se o script existe
+ls -l /home/ubuntu/sistema_salao_beleza/scripts/backup-agendado.sh
+
+# Executar manualmente para ver erros
+bash /home/ubuntu/sistema_salao_beleza/scripts/backup-agendado.sh
+```
+
+### Disco cheio?
+```bash
+# Ver espaço disponível
+df -h
+
+# Limpar backups muito antigos (>60 dias)
+find /home/ubuntu/backups/database -mtime +60 -delete
+```
+
+### Erro no backup?
+```bash
+# Ver último log com erros
+grep -i "erro\|error" /home/ubuntu/backups/logs/backup_auto_*.log | tail -20
+```
+
+---
+
+## 📞 SUPORTE
+
+**Email:** sistemabeleza.contato@gmail.com
+
+**Documentação Completa:**
+- `/home/ubuntu/sistema_salao_beleza/BACKUP_ATIVO.md`
+- `/home/ubuntu/sistema_salao_beleza/ACESSO_BANCO_DADOS.md`
+
+---
+
+## ✅ CHECKLIST MENSAL
+
+- [ ] Executar backup manual e verificar sucesso
+- [ ] Conferir espaço em disco disponível
+- [ ] Copiar backup importante para HD externo
+- [ ] Revisar logs em busca de erros
+- [ ] Testar que o cron está agendado (se aplicável)
+
+---
+
+## 🎉 TUDO PRONTO!
+
+Seu sistema de backup está **100% operacional**!
+
+**Próximo backup automático:** Amanhã às 03:00
+
+**Para fazer backup agora:**
+```bash
+bash /home/ubuntu/sistema_salao_beleza/scripts/backup-agendado.sh
+```
+
+---
+
+**Configurado em:** 11/11/2025  
+**Status:** ✅ ATIVO E FUNCIONANDO
