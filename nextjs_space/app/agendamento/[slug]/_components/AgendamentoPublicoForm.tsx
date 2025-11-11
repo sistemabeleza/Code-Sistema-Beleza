@@ -85,6 +85,14 @@ export default function AgendamentoPublicoForm({ salao }: Props) {
   const servicoSelecionado = salao.servicos.find(s => s.id === formData.servico_id)
   const profissionalSelecionado = salao.profissionais.find(p => p.id === formData.profissional_id)
 
+  // Função para formatar data no padrão brasileiro (DD/MM/YYYY)
+  const formatarDataBrasileira = (dataString: string): string => {
+    if (!dataString) return ''
+    // Garantir que a data seja interpretada como local (não UTC)
+    const [ano, mes, dia] = dataString.split('-')
+    return `${dia}/${mes}/${ano}`
+  }
+
   const buscarHorariosDisponiveis = async () => {
     if (!formData.servico_id || !formData.profissional_id || !formData.data) return
 
@@ -209,7 +217,7 @@ export default function AgendamentoPublicoForm({ salao }: Props) {
                 <div>
                   <p className="text-sm text-gray-500">Data e Horário</p>
                   <p className="font-medium text-gray-900">
-                    {new Date(formData.data).toLocaleDateString('pt-BR')} às {formData.horario}
+                    {formatarDataBrasileira(formData.data)} às {formData.horario}
                   </p>
                 </div>
               </div>
@@ -552,7 +560,7 @@ export default function AgendamentoPublicoForm({ salao }: Props) {
                 <div className="text-sm space-y-1">
                   <p><strong>Serviço:</strong> {servicoSelecionado?.nome}</p>
                   <p><strong>Profissional:</strong> {profissionalSelecionado?.nome}</p>
-                  <p><strong>Data:</strong> {new Date(formData.data).toLocaleDateString('pt-BR')}</p>
+                  <p><strong>Data:</strong> {formatarDataBrasileira(formData.data)}</p>
                   <p><strong>Horário:</strong> {formData.horario}</p>
                   <p><strong>Valor:</strong> R$ {Number(servicoSelecionado?.preco || 0).toFixed(2)}</p>
                 </div>
