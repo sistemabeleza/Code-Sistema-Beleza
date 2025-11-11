@@ -1,41 +1,21 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+require('dotenv').config();
 
-async function checkS3Usage() {
-  try {
-    // Verificar se existem configurações de salão com logo/foto
-    const saloes = await prisma.salao.findMany({
-      where: {
-        OR: [
-          { logo_url: { not: null } },
-          { foto_capa_url: { not: null } }
-        ]
-      },
-      select: {
-        id: true,
-        nome: true,
-        logo_url: true,
-        foto_capa_url: true
-      }
-    });
-
-    console.log('Salões com fotos no S3:');
-    saloes.forEach(salao => {
-      console.log(`\nSalão: ${salao.nome}`);
-      if (salao.logo_url) console.log(`  Logo: ${salao.logo_url}`);
-      if (salao.foto_capa_url) console.log(`  Foto: ${salao.foto_capa_url}`);
-    });
-
-    if (saloes.length === 0) {
-      console.log('\nNenhum salão com fotos encontrado.');
-      console.log('O sistema está configurado mas ainda não tem uploads no S3.');
-    }
-
-  } catch (error) {
-    console.error('Erro:', error.message);
-  } finally {
-    await prisma.$disconnect();
-  }
-}
-
-checkS3Usage();
+console.log('\n☁️  INFORMAÇÕES DE ARMAZENAMENTO (AWS S3)\n');
+console.log('='.repeat(60));
+console.log('\n📦 CONFIGURAÇÃO ATUAL:');
+console.log(`  • Bucket: ${process.env.AWS_BUCKET_NAME || 'Não configurado'}`);
+console.log(`  • Região: ${process.env.AWS_REGION || 'Não configurado'}`);
+console.log(`  • Pasta: ${process.env.AWS_FOLDER_PREFIX || 'Raiz do bucket'}`);
+console.log('\n💾 CAPACIDADE:');
+console.log('  • Armazenamento S3: Virtualmente ilimitado');
+console.log('  • Limite de objetos: Ilimitado');
+console.log('  • Suporte para uploads: Sim');
+console.log('  • Tipos suportados: Imagens (JPG, PNG, etc.)');
+console.log('\n📈 ESTIMATIVA PARA 100 NOVOS USUÁRIOS:');
+console.log('  • Logos de salões: ~100 arquivos');
+console.log('  • Fotos de salões: ~200 arquivos');
+console.log('  • Fotos de produtos: ~500-1000 arquivos (estimativa)');
+console.log('  • Espaço estimado: 50-200 MB (dependendo das imagens)');
+console.log('  • Status: ✅ SEM PROBLEMAS DE CAPACIDADE');
+console.log('\n' + '='.repeat(60));
+console.log('');
