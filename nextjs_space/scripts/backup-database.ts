@@ -11,7 +11,7 @@ config({ path: '/home/ubuntu/sistema_salao_beleza/nextjs_space/.env' });
 const execAsync = promisify(exec);
 const prisma = new PrismaClient();
 
-const BACKUP_DIR = '/home/ubuntu/backups';
+const BACKUP_DIR = process.env.BACKUP_DIR || '/home/ubuntu/backups';
 const DATE = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0] + '_' + 
              new Date().toTimeString().split(' ')[0].replace(/:/g, '');
 
