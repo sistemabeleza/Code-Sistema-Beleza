@@ -167,11 +167,33 @@ export default function AgendaView() {
 
   const enviarWhatsAppConfirmacao = (agendamento: Agendamento) => {
     const telefone = agendamento.cliente.telefone.replace(/\D/g, '')
-    const dataFormatada = new Date(agendamento.data + 'T12:00:00').toLocaleDateString('pt-BR')
-    const horaInicio = new Date(agendamento.hora_inicio).toLocaleTimeString('pt-BR', {
-      hour: '2-digit',
-      minute: '2-digit'
-    })
+    
+    // Formatar data sem conversão UTC - extrair do formato ISO diretamente
+    const formatarDataBrasileira = (dataISO: string): string => {
+      // Se vier no formato YYYY-MM-DD
+      if (dataISO.includes('T')) {
+        const data = new Date(dataISO)
+        const dia = String(data.getDate()).padStart(2, '0')
+        const mes = String(data.getMonth() + 1).padStart(2, '0')
+        const ano = data.getFullYear()
+        return `${dia}/${mes}/${ano}`
+      } else {
+        // Se vier só a data YYYY-MM-DD
+        const [ano, mes, dia] = dataISO.split('-')
+        return `${dia}/${mes}/${ano}`
+      }
+    }
+    
+    // Formatar horário sem conversão UTC
+    const formatarHorario = (horaISO: string): string => {
+      const data = new Date(horaISO)
+      const horas = String(data.getHours()).padStart(2, '0')
+      const minutos = String(data.getMinutes()).padStart(2, '0')
+      return `${horas}:${minutos}`
+    }
+
+    const dataFormatada = formatarDataBrasileira(agendamento.data)
+    const horaInicio = formatarHorario(agendamento.hora_inicio)
 
     const mensagem = `Olá ${agendamento.cliente.nome}! 👋\n\n` +
       `✅ Seu agendamento está confirmado:\n\n` +
