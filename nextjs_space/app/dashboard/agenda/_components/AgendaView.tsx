@@ -159,24 +159,6 @@ export default function AgendaView() {
     setModalLembreteAberto(true)
   }
 
-  const enviarWhatsAppLinkAgendamento = (agendamento: Agendamento) => {
-    if (!configuracoes?.slug) {
-      toast.error('Link de agendamento não configurado')
-      return
-    }
-
-    const linkAgendamento = `${window.location.origin}/agendamento/${configuracoes.slug}`
-    const telefone = agendamento.cliente.telefone.replace(/\D/g, '')
-    
-    const mensagem = `Olá ${agendamento.cliente.nome}! 👋\n\n` +
-      `Você pode agendar seu próximo horário através do nosso link:\n` +
-      `${linkAgendamento}\n\n` +
-      `Será um prazer te atender novamente! 💇`
-
-    const whatsappUrl = `https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`
-    window.open(whatsappUrl, '_blank')
-  }
-
   const enviarWhatsAppConfirmacao = (agendamento: Agendamento) => {
     const telefone = agendamento.cliente.telefone.replace(/\D/g, '')
     
@@ -438,17 +420,28 @@ export default function AgendaView() {
                         </div>
                       )}
 
-                      {/* Linha 2: Enviar Lembrete Inteligente (para agendamentos ativos) */}
+                      {/* Linha 2: WhatsApp (para agendamentos ativos) */}
                       {(agendamento.status === 'AGENDADO' || agendamento.status === 'CONFIRMADO') && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="w-full bg-gradient-to-r from-blue-50 to-green-50 hover:from-blue-100 hover:to-green-100 border-blue-200"
-                          onClick={() => abrirModalLembrete(agendamento)}
-                        >
-                          <MessageCircle className="h-4 w-4 mr-2" />
-                          📱 Enviar Lembrete Inteligente
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 bg-blue-50 hover:bg-blue-100"
+                            onClick={() => abrirModalLembrete(agendamento)}
+                          >
+                            <MessageCircle className="h-4 w-4 mr-1" />
+                            Enviar Link
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 bg-green-50 hover:bg-green-100"
+                            onClick={() => enviarWhatsAppConfirmacao(agendamento)}
+                          >
+                            <MessageCircle className="h-4 w-4 mr-1" />
+                            Enviar Confirmação
+                          </Button>
+                        </div>
                       )}
                     </div>
                   </div>
