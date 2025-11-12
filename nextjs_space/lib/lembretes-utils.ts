@@ -86,31 +86,53 @@ export function formatarDataHumana(dataISO: string | Date, horaISO: string | Dat
   let dataStr = typeof dataISO === 'string' ? dataISO : dataISO.toISOString?.() || String(dataISO)
   const [ano, mes, dia] = dataStr.split('T')[0].split('-')
   
-  // Extrair hora - SEMPRE usar valor local, SEM conversão de timezone
+  // Extrair hora - SEMPRE converter para timezone de São Paulo
   let horas = '00'
   let minutos = '00'
   
   if (typeof horaISO === 'string') {
     // String: pode ser "HH:MM:SS", "HH:MM" ou "2025-11-12T17:45:00.000Z"
-    const horaLimpa = horaISO.includes('T') ? horaISO.split('T')[1].split('.')[0] : horaISO
-    const partes = horaLimpa.split(':')
-    horas = partes[0].padStart(2, '0')
-    minutos = (partes[1] || '00').padStart(2, '0')
+    if (horaISO.includes('T') || horaISO.includes('Z') || horaISO.length > 10) {
+      // String ISO completa - converter para timezone de São Paulo
+      const dataHora = new Date(horaISO)
+      const horaLocal = dataHora.toLocaleString('pt-BR', {
+        timeZone: 'America/Sao_Paulo',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      })
+      const [h, m] = horaLocal.split(':')
+      horas = h
+      minutos = m
+    } else {
+      // Formato simples "HH:MM:SS" ou "HH:MM" - usar direto
+      const partes = horaISO.split(':')
+      horas = partes[0].padStart(2, '0')
+      minutos = (partes[1] || '00').padStart(2, '0')
+    }
   } else if (horaISO instanceof Date) {
-    // Date object: usar getHours/getMinutes para EVITAR conversão de timezone
-    horas = String(horaISO.getHours()).padStart(2, '0')
-    minutos = String(horaISO.getMinutes()).padStart(2, '0')
+    // Date object: converter para timezone de São Paulo
+    const horaLocal = horaISO.toLocaleString('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    })
+    const [h, m] = horaLocal.split(':')
+    horas = h
+    minutos = m
   } else if (horaISO?.getHours !== undefined) {
-    // Objeto com métodos de Date mas não instanceof Date
-    horas = String(horaISO.getHours()).padStart(2, '0')
-    minutos = String(horaISO.getMinutes()).padStart(2, '0')
-  } else if (horaISO?.toISOString) {
-    // Último recurso: usar toISOString e extrair (pode ter conversão de timezone)
-    const isoString = horaISO.toISOString()
-    const horaUTC = isoString.split('T')[1].split('.')[0]
-    const [h, m] = horaUTC.split(':')
-    horas = h.padStart(2, '0')
-    minutos = m.padStart(2, '0')
+    // Objeto com métodos de Date - converter para timezone de São Paulo
+    const dataTemp = new Date(horaISO)
+    const horaLocal = dataTemp.toLocaleString('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    })
+    const [h, m] = horaLocal.split(':')
+    horas = h
+    minutos = m
   }
   
   return `${dia}/${mes}/${ano} às ${horas}:${minutos}`
