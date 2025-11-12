@@ -6,12 +6,12 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 
 // Carregar variáveis de ambiente
-config({ path: '/home/ubuntu/sistema_salao_beleza/nextjs_space/.env' });
+config({ path: path.join(__dirname, '..', '.env') });
 
 const execAsync = promisify(exec);
 const prisma = new PrismaClient();
 
-const BACKUP_DIR = process.env.BACKUP_DIR || '/home/ubuntu/backups';
+const BACKUP_DIR = process.env.BACKUP_DIR || path.join(__dirname, '..', '..', 'backups');
 const DATE = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0] + '_' + 
              new Date().toTimeString().split(' ')[0].replace(/:/g, '');
 

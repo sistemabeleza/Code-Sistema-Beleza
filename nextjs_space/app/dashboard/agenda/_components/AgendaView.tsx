@@ -22,6 +22,7 @@ import {
   Check
 } from 'lucide-react'
 import NovoAgendamentoModal from './NovoAgendamentoModal'
+import EnviarLembreteModal from './EnviarLembreteModal'
 
 interface Agendamento {
   id: string
@@ -48,6 +49,8 @@ export default function AgendaView() {
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([])
   const [loading, setLoading] = useState(true)
   const [modalAberto, setModalAberto] = useState(false)
+  const [modalLembreteAberto, setModalLembreteAberto] = useState(false)
+  const [agendamentoSelecionado, setAgendamentoSelecionado] = useState<Agendamento | null>(null)
   const [configuracoes, setConfiguracoes] = useState<ConfiguracoesSalao | null>(null)
 
   useEffect(() => {
@@ -145,6 +148,15 @@ export default function AgendaView() {
       console.error('Erro:', error)
       toast.error('Erro ao concluir serviço')
     }
+  }
+
+  const abrirModalLembrete = (agendamento: Agendamento) => {
+    if (!configuracoes?.slug) {
+      toast.error('Link de agendamento não configurado')
+      return
+    }
+    setAgendamentoSelecionado(agendamento)
+    setModalLembreteAberto(true)
   }
 
   const enviarWhatsAppLinkAgendamento = (agendamento: Agendamento) => {
@@ -426,28 +438,17 @@ export default function AgendaView() {
                         </div>
                       )}
 
-                      {/* Linha 2: WhatsApp (para agendamentos ativos) */}
+                      {/* Linha 2: Enviar Lembrete Inteligente (para agendamentos ativos) */}
                       {(agendamento.status === 'AGENDADO' || agendamento.status === 'CONFIRMADO') && (
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="flex-1 bg-blue-50 hover:bg-blue-100"
-                            onClick={() => enviarWhatsAppLinkAgendamento(agendamento)}
-                          >
-                            <MessageCircle className="h-4 w-4 mr-1" />
-                            Enviar Link
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="flex-1 bg-green-50 hover:bg-green-100"
-                            onClick={() => enviarWhatsAppConfirmacao(agendamento)}
-                          >
-                            <MessageCircle className="h-4 w-4 mr-1" />
-                            Enviar Confirmação
-                          </Button>
-                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full bg-gradient-to-r from-blue-50 to-green-50 hover:from-blue-100 hover:to-green-100 border-blue-200"
+                          onClick={() => abrirModalLembrete(agendamento)}
+                        >
+                          <MessageCircle className="h-4 w-4 mr-2" />
+                          📱 Enviar Lembrete Inteligente
+                        </Button>
                       )}
                     </div>
                   </div>
@@ -466,6 +467,16 @@ export default function AgendaView() {
           carregarAgendamentos()
         }}
         dataInicial={dataSelecionada}
+      />
+
+      <EnviarLembreteModal
+        aberto={modalLembreteAberto}
+        onFechar={() => {
+          setModalLembreteAberto(false)
+          setAgendamentoSelecionado(null)
+        }}
+        agendamento={agendamentoSelecionado}
+        linkPublico={configuracoes?.slug ? `${typeof window !== 'undefined' ? window.location.origin : ''}/agendamento/${configuracoes.slug}` : ''}
       />
     </>
   )
