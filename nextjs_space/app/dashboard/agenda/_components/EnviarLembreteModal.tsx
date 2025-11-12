@@ -61,23 +61,50 @@ export default function EnviarLembreteModal({
 
   // Verificar se agendamento expirou
   // Extrair hora da string hora_inicio (pode vir como "HH:MM:SS", "HH:MM" ou Date)
+  // IMPORTANTE: Sempre extrair como string local, SEM conversão de timezone
   let horaFormatada = ''
-  if (typeof agendamento.hora_inicio === 'string') {
-    horaFormatada = agendamento.hora_inicio.split('T')[1]?.split('.')[0] || agendamento.hora_inicio
+  const horaInicio: any = agendamento.hora_inicio
+  
+  if (typeof horaInicio === 'string') {
+    // Se já é string, usar direto (pode ter ou não a parte de data)
+    if (horaInicio.includes('T')) {
+      // Formato ISO completo: "2025-11-12T17:45:00.000Z"
+      horaFormatada = horaInicio.split('T')[1].split('.')[0]
+    } else {
+      // Formato simples: "17:45:00" ou "17:45"
+      horaFormatada = horaInicio
+    }
+  } else if (horaInicio instanceof Date) {
+    // CRÍTICO: Se é Date object, extrair usando getHours/getMinutes
+    // para EVITAR conversão de timezone do toISOString()
+    const h = String(horaInicio.getHours()).padStart(2, '0')
+    const m = String(horaInicio.getMinutes()).padStart(2, '0')
+    const s = String(horaInicio.getSeconds()).padStart(2, '0')
+    horaFormatada = `${h}:${m}:${s}`
+  } else if (horaInicio?.getHours !== undefined) {
+    // Objeto com métodos de Date mas não instanceof Date
+    const h = String(horaInicio.getHours()).padStart(2, '0')
+    const m = String(horaInicio.getMinutes()).padStart(2, '0')
+    const s = String(horaInicio.getSeconds()).padStart(2, '0')
+    horaFormatada = `${h}:${m}:${s}`
   } else {
-    const dataHora = new Date(agendamento.hora_inicio)
-    horaFormatada = `${String(dataHora.getHours()).padStart(2, '0')}:${String(dataHora.getMinutes()).padStart(2, '0')}:00`
+    // Fallback: tentar converter para Date
+    const dataHora = new Date(horaInicio)
+    const h = String(dataHora.getHours()).padStart(2, '0')
+    const m = String(dataHora.getMinutes()).padStart(2, '0')
+    const s = String(dataHora.getSeconds()).padStart(2, '0')
+    horaFormatada = `${h}:${m}:${s}`
   }
   
   const agendamentoDatetime = `${agendamento.data.split('T')[0]}T${horaFormatada}`
   const expirado = agendamentoExpirado(agendamentoDatetime)
 
-  // Dados para template
+  // Dados para template - usar horaFormatada extraída, não o valor original
   const templateData: TemplateData = {
     cliente_nome: agendamento.cliente.nome,
     servico_nome: agendamento.servico.nome,
     profissional_nome: agendamento.profissional.nome,
-    agendamento_data_human: formatarDataHumana(agendamento.data, agendamento.hora_inicio),
+    agendamento_data_human: formatarDataHumana(agendamento.data, horaFormatada),
     tempo_restante: calcularTempoRestante(agendamentoDatetime),
     link_publico: linkPublico
   }
