@@ -84,10 +84,24 @@ export function formatarDataHumana(dataISO: string, horaISO: string): string {
   // Extrair data sem conversão UTC
   const [ano, mes, dia] = dataISO.split('T')[0].split('-')
   
-  // Extrair hora
-  const dataHora = new Date(horaISO)
-  const horas = String(dataHora.getHours()).padStart(2, '0')
-  const minutos = String(dataHora.getMinutes()).padStart(2, '0')
+  // Extrair hora (pode vir como string "HH:MM:SS", "HH:MM" ou Date)
+  let horas = '00'
+  let minutos = '00'
+  
+  if (typeof horaISO === 'string') {
+    // Se é string, extrair HH:MM
+    const horaStr = horaISO.split('T')[1]?.split('.')[0] || horaISO
+    const [h, m] = horaStr.split(':')
+    horas = h.padStart(2, '0')
+    minutos = m.padStart(2, '0')
+  } else {
+    // Se é Date
+    const dataHora = new Date(horaISO)
+    if (!isNaN(dataHora.getTime())) {
+      horas = String(dataHora.getHours()).padStart(2, '0')
+      minutos = String(dataHora.getMinutes()).padStart(2, '0')
+    }
+  }
   
   return `${dia}/${mes}/${ano} às ${horas}:${minutos}`
 }

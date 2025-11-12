@@ -60,7 +60,16 @@ export default function EnviarLembreteModal({
   if (!agendamento) return null
 
   // Verificar se agendamento expirou
-  const agendamentoDatetime = new Date(agendamento.data + 'T' + new Date(agendamento.hora_inicio).toTimeString().split(' ')[0]).toISOString()
+  // Extrair hora da string hora_inicio (pode vir como "HH:MM:SS", "HH:MM" ou Date)
+  let horaFormatada = ''
+  if (typeof agendamento.hora_inicio === 'string') {
+    horaFormatada = agendamento.hora_inicio.split('T')[1]?.split('.')[0] || agendamento.hora_inicio
+  } else {
+    const dataHora = new Date(agendamento.hora_inicio)
+    horaFormatada = `${String(dataHora.getHours()).padStart(2, '0')}:${String(dataHora.getMinutes()).padStart(2, '0')}:00`
+  }
+  
+  const agendamentoDatetime = `${agendamento.data.split('T')[0]}T${horaFormatada}`
   const expirado = agendamentoExpirado(agendamentoDatetime)
 
   // Dados para template
