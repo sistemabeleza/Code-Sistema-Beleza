@@ -18,7 +18,29 @@ import { Agendamento, Cliente, Profissional, Servico, Salao } from '@prisma/clie
 export type WebhookEvento = 'agendamento.criado' | 'agendamento.atualizado' | 'agendamento.cancelado'
 
 /**
- * Payload padronizado enviado para o webhook
+ * Formato de payload para ZAPI/Fiqon (WhatsApp)
+ */
+interface ZAPIPayload {
+  phone: string              // Telefone no formato internacional (+5511999999999)
+  message: string            // Mensagem de texto
+  delayMessage?: number      // Atraso em segundos (1-15), padrão 1
+}
+
+/**
+ * Formato de payload com documento para ZAPI/Fiqon
+ */
+interface ZAPIPayloadComDocumento {
+  phone: string              // Telefone no formato internacional
+  document: string           // URL do documento ou Base64
+  fileName?: string          // Nome do arquivo
+  extension?: string         // Extensão (.pdf, .docx, etc)
+  caption?: string           // Descrição/legenda do documento
+  messageId?: string         // ID da mensagem para responder
+  delayMessage?: number      // Atraso em segundos (1-15)
+}
+
+/**
+ * Payload padronizado enviado para o webhook (formato genérico - mantido para compatibilidade)
  */
 interface WebhookPayload {
   evento: WebhookEvento
@@ -92,7 +114,105 @@ function validarWebhookConfig(salao: Salao): boolean {
 }
 
 /**
- * Formata o payload do webhook no padrão esperado
+ * Formata o telefone para o padrão internacional da ZAPI
+ */
+function formatarTelefoneInternacional(telefone: string): string {
+  // Remove todos os caracteres não numéricos
+  let numeros = telefone.replace(/\D/g, '')
+  
+  // Se não começar com 55 (código do Brasil), adiciona
+  if (!numeros.startsWith('55')) {
+    numeros = '55' + numeros
+  }
+  
+  // Adiciona o + no início
+  return '+' + numeros
+}
+
+/**
+ * Formata mensagem de agendamento para WhatsApp
+ */
+function formatarMensagemAgendamento(
+  evento: WebhookEvento,
+  agendamento: AgendamentoCompleto
+): string {
+  const dataFormatada = agendamento.data.toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    timeZone: 'America/Sao_Paulo'
+  })
+  
+  const horaInicio = agendamento.hora_inicio.toLocaleTimeString('pt-BR', { 
+    hour: '2-digit', 
+    minute: '2-digit',
+    timeZone: 'America/Sao_Paulo'
+  })
+
+  const nomeSalao = agendamento.salao?.nome || 'Nosso salão'
+  const nomeCliente = agendamento.cliente.nome
+  const nomeServico = agendamento.servico.nome
+  const nomeProfissional = agendamento.profissional.nome
+
+  let mensagem = ''
+
+  switch (evento) {
+    case 'agendamento.criado':
+      mensagem = `✅ *Agendamento Confirmado!*\n\n` +
+        `Olá ${nomeCliente}! 👋\n\n` +
+        `Seu agendamento foi realizado com sucesso no *${nomeSalao}*.\n\n` +
+        `📅 *Data:* ${dataFormatada}\n` +
+        `🕐 *Horário:* ${horaInicio}\n` +
+        `💇 *Serviço:* ${nomeServico}\n` +
+        `👤 *Profissional:* ${nomeProfissional}\n\n` +
+        `Aguardamos você! 😊`
+      break
+
+    case 'agendamento.atualizado':
+      mensagem = `🔄 *Agendamento Atualizado*\n\n` +
+        `Olá ${nomeCliente}! 👋\n\n` +
+        `Seu agendamento no *${nomeSalao}* foi atualizado.\n\n` +
+        `📅 *Nova Data:* ${dataFormatada}\n` +
+        `🕐 *Novo Horário:* ${horaInicio}\n` +
+        `💇 *Serviço:* ${nomeServico}\n` +
+        `👤 *Profissional:* ${nomeProfissional}\n\n` +
+        `Nos vemos lá! 😊`
+      break
+
+    case 'agendamento.cancelado':
+      mensagem = `❌ *Agendamento Cancelado*\n\n` +
+        `Olá ${nomeCliente}! 👋\n\n` +
+        `Seu agendamento no *${nomeSalao}* foi cancelado.\n\n` +
+        `📅 *Data:* ${dataFormatada}\n` +
+        `🕐 *Horário:* ${horaInicio}\n` +
+        `💇 *Serviço:* ${nomeServico}\n\n` +
+        `Para reagendar, entre em contato conosco! 📞`
+      break
+  }
+
+  if (agendamento.observacoes) {
+    mensagem += `\n\n📝 *Observações:* ${agendamento.observacoes}`
+  }
+
+  return mensagem
+}
+
+/**
+ * Formata o payload do webhook no formato ZAPI (WhatsApp)
+ */
+function formatarPayloadZAPI(
+  evento: WebhookEvento,
+  agendamento: AgendamentoCompleto
+): ZAPIPayload {
+  return {
+    phone: formatarTelefoneInternacional(agendamento.cliente.telefone),
+    message: formatarMensagemAgendamento(evento, agendamento),
+    delayMessage: 2 // Atraso de 2 segundos para melhor experiência
+  }
+}
+
+/**
+ * Formata o payload do webhook no padrão genérico (mantido para compatibilidade)
  */
 function formatarPayloadWebhook(
   evento: WebhookEvento,
@@ -155,21 +275,22 @@ function formatarPayloadWebhook(
 }
 
 /**
- * Envia o webhook para a URL configurada
+ * Envia o webhook para a URL configurada (formato ZAPI/Fiqon)
  * 
  * Esta função implementa:
- * - Timeout de 5 segundos
+ * - Timeout de 10 segundos (WhatsApp pode demorar mais)
  * - Retry de 1 tentativa em caso de falha
  * - Captura total de erros (nunca propaga exceções)
  * - Logs detalhados para auditoria
  */
-async function enviarWebhook(url: string, payload: WebhookPayload): Promise<boolean> {
+async function enviarWebhook(url: string, payload: ZAPIPayload | ZAPIPayloadComDocumento): Promise<boolean> {
   const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 segundos
+  const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 segundos
 
   try {
-    console.log(`[Webhook] Enviando evento ${payload.evento} para ${url}`)
-    console.log(`[Webhook] Payload:`, JSON.stringify(payload, null, 2))
+    console.log(`[Webhook ZAPI] Enviando mensagem WhatsApp para ${payload.phone}`)
+    console.log(`[Webhook ZAPI] URL:`, url)
+    console.log(`[Webhook ZAPI] Payload:`, JSON.stringify(payload, null, 2))
 
     const response = await fetch(url, {
       method: 'POST',
@@ -184,20 +305,22 @@ async function enviarWebhook(url: string, payload: WebhookPayload): Promise<bool
     clearTimeout(timeoutId)
 
     if (response.ok) {
-      console.log(`[Webhook] ✓ Enviado com sucesso (status ${response.status})`)
+      const responseData = await response.json().catch(() => ({}))
+      console.log(`[Webhook ZAPI] ✓ Enviado com sucesso (status ${response.status})`)
+      console.log(`[Webhook ZAPI] Resposta:`, responseData)
       return true
     } else {
       const errorText = await response.text().catch(() => 'Sem resposta')
-      console.error(`[Webhook] ✗ Erro no servidor remoto (status ${response.status}):`, errorText)
+      console.error(`[Webhook ZAPI] ✗ Erro no servidor remoto (status ${response.status}):`, errorText)
       return false
     }
   } catch (error: any) {
     clearTimeout(timeoutId)
 
     if (error.name === 'AbortError') {
-      console.error(`[Webhook] ✗ Timeout após 5 segundos`)
+      console.error(`[Webhook ZAPI] ✗ Timeout após 10 segundos`)
     } else {
-      console.error(`[Webhook] ✗ Erro ao enviar webhook:`, error.message || error)
+      console.error(`[Webhook ZAPI] ✗ Erro ao enviar webhook:`, error.message || error)
     }
 
     return false
@@ -205,7 +328,7 @@ async function enviarWebhook(url: string, payload: WebhookPayload): Promise<bool
 }
 
 /**
- * Função principal: envia webhook de evento de agendamento
+ * Função principal: envia webhook de evento de agendamento (formato ZAPI/Fiqon)
  * 
  * Esta é a função que deve ser chamada nos endpoints de agendamento.
  * 
@@ -225,7 +348,7 @@ export async function enviarWebhookAgendamento(
     const salaoData = agendamento.salao || salao
 
     if (!salaoData) {
-      console.error('[Webhook] Dados do salão não disponíveis para envio de webhook')
+      console.error('[Webhook ZAPI] Dados do salão não disponíveis para envio de webhook')
       return
     }
 
@@ -234,29 +357,31 @@ export async function enviarWebhookAgendamento(
       return // Não fazer nada se webhook não estiver configurado
     }
 
-    // Formatar payload
-    const payload = formatarPayloadWebhook(evento, {
+    // Formatar payload no formato ZAPI (WhatsApp)
+    const payload = formatarPayloadZAPI(evento, {
       ...agendamento,
       salao: salaoData
     })
 
+    console.log('[Webhook ZAPI] Iniciando envio de notificação WhatsApp...')
+
     // Enviar webhook (com retry automático)
     const sucesso = await enviarWebhook(salaoData.webhook_url!, payload)
 
-    // Se falhou, tentar uma vez mais após 1 segundo
+    // Se falhou, tentar uma vez mais após 2 segundos
     if (!sucesso) {
-      console.log('[Webhook] Tentando reenvio em 1 segundo...')
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      console.log('[Webhook ZAPI] Tentando reenvio em 2 segundos...')
+      await new Promise(resolve => setTimeout(resolve, 2000))
       await enviarWebhook(salaoData.webhook_url!, payload)
     }
   } catch (error) {
     // Captura absoluta de qualquer erro - NUNCA propagar para o fluxo principal
-    console.error('[Webhook] Erro crítico capturado (não afeta o agendamento):', error)
+    console.error('[Webhook ZAPI] Erro crítico capturado (não afeta o agendamento):', error)
   }
 }
 
 /**
- * Utilitário para testar webhook sem criar agendamento real
+ * Utilitário para testar webhook sem criar agendamento real (formato ZAPI/Fiqon)
  * Útil para validação da configuração
  */
 export async function testarWebhook(salao: Salao): Promise<{ sucesso: boolean; mensagem: string }> {
@@ -268,49 +393,27 @@ export async function testarWebhook(salao: Salao): Promise<{ sucesso: boolean; m
       }
     }
 
-    const payloadTeste: WebhookPayload = {
-      evento: 'agendamento.criado',
-      timestamp: new Date().toISOString(),
-      salao: {
-        id: salao.id,
-        nome: salao.nome,
-        slug: salao.slug
-      },
-      agendamento: {
-        id: 'test-123',
-        data: new Date().toISOString().split('T')[0],
-        hora_inicio: '10:00',
-        hora_fim: '11:00',
-        status: 'AGENDADO',
-        origem: 'MANUAL',
-        valor_cobrado: 50.00,
-        observacoes: 'Teste de webhook'
-      },
-      cliente: {
-        id: 'test-cliente',
-        nome: 'Cliente Teste',
-        telefone: '+5511999999999',
-        email: 'teste@exemplo.com'
-      },
-      servico: {
-        id: 'test-servico',
-        nome: 'Corte de Cabelo',
-        preco: 50.00,
-        duracao_minutos: 60
-      },
-      profissional: {
-        id: 'test-profissional',
-        nome: 'Profissional Teste'
-      }
+    // Criar payload de teste no formato ZAPI
+    const payloadTeste: ZAPIPayload = {
+      phone: '+5511999999999',
+      message: `🧪 *Teste de Webhook - ${salao.nome}*\n\n` +
+        `Este é um teste de integração WhatsApp.\n\n` +
+        `✅ Sua configuração está funcionando corretamente!\n\n` +
+        `📅 Data do teste: ${new Date().toLocaleDateString('pt-BR')}\n` +
+        `🕐 Horário: ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}\n\n` +
+        `Sistema Beleza - Automação Inteligente`,
+      delayMessage: 1
     }
+
+    console.log('[Webhook ZAPI] Enviando mensagem de teste...')
 
     const sucesso = await enviarWebhook(salao.webhook_url!, payloadTeste)
 
     return {
       sucesso,
       mensagem: sucesso 
-        ? 'Webhook enviado com sucesso!' 
-        : 'Falha ao enviar webhook. Verifique a URL e tente novamente.'
+        ? '✓ Webhook ZAPI enviado com sucesso! Verifique o WhatsApp.' 
+        : '✗ Falha ao enviar webhook. Verifique a URL da ZAPI e tente novamente.'
     }
   } catch (error: any) {
     return {
