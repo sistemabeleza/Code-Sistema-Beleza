@@ -41,6 +41,17 @@ model Salao {
   automacao_ativa     Boolean              @default(false)  // Ativa/desativa webhook de automação
   webhook_url         String?              // URL para envio de eventos de agendamento
   
+  // Configurações específicas ZAPI/Fiqon
+  zapi_tipo_envio              String?     @default("texto")       // "texto" ou "documento"
+  zapi_delay                   Int?        @default(2)             // Atraso em segundos (1-15)
+  zapi_enviar_confirmacao      Boolean     @default(true)          // Enviar confirmação de agendamento
+  zapi_enviar_atualizacao      Boolean     @default(true)          // Enviar notificação de atualização
+  zapi_enviar_cancelamento     Boolean     @default(true)          // Enviar notificação de cancelamento
+  zapi_documento_url           String?                             // URL do documento a ser enviado
+  zapi_documento_nome          String?                             // Nome do arquivo
+  zapi_documento_extensao      String?                             // Extensão (.pdf, .docx, etc)
+  zapi_documento_descricao     String?                             // Descrição/caption do documento
+  
   data_criacao        DateTime             @default(now())
   data_atualizacao    DateTime             @updatedAt
 

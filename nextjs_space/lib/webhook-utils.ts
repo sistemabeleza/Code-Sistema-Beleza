@@ -198,16 +198,41 @@ function formatarMensagemAgendamento(
 }
 
 /**
- * Formata o payload do webhook no formato ZAPI (WhatsApp)
+ * Formata o payload do webhook no formato ZAPI (WhatsApp) - Apenas Texto
  */
 function formatarPayloadZAPI(
   evento: WebhookEvento,
-  agendamento: AgendamentoCompleto
+  agendamento: AgendamentoCompleto,
+  delaySegundos: number = 2
 ): ZAPIPayload {
   return {
     phone: formatarTelefoneInternacional(agendamento.cliente.telefone),
     message: formatarMensagemAgendamento(evento, agendamento),
-    delayMessage: 2 // Atraso de 2 segundos para melhor experiência
+    delayMessage: delaySegundos
+  }
+}
+
+/**
+ * Formata o payload do webhook no formato ZAPI com documento
+ */
+function formatarPayloadZAPIComDocumento(
+  evento: WebhookEvento,
+  agendamento: AgendamentoCompleto,
+  configuracao: {
+    documento_url: string
+    documento_nome?: string
+    documento_extensao?: string
+    documento_descricao?: string
+    delay: number
+  }
+): ZAPIPayloadComDocumento {
+  return {
+    phone: formatarTelefoneInternacional(agendamento.cliente.telefone),
+    document: configuracao.documento_url,
+    fileName: configuracao.documento_nome || 'Comprovante',
+    extension: configuracao.documento_extensao || '.pdf',
+    caption: configuracao.documento_descricao || formatarMensagemAgendamento(evento, agendamento),
+    delayMessage: configuracao.delay
   }
 }
 
@@ -357,21 +382,65 @@ export async function enviarWebhookAgendamento(
       return // Não fazer nada se webhook não estiver configurado
     }
 
-    // Formatar payload no formato ZAPI (WhatsApp)
-    const payload = formatarPayloadZAPI(evento, {
-      ...agendamento,
-      salao: salaoData
-    })
+    // Verificar se deve enviar notificação para este tipo de evento
+    const deveEnviar = (() => {
+      switch (evento) {
+        case 'agendamento.criado':
+          return (salaoData as any).zapi_enviar_confirmacao !== false
+        case 'agendamento.atualizado':
+          return (salaoData as any).zapi_enviar_atualizacao !== false
+        case 'agendamento.cancelado':
+          return (salaoData as any).zapi_enviar_cancelamento !== false
+        default:
+          return true
+      }
+    })()
+
+    if (!deveEnviar) {
+      console.log(`[Webhook ZAPI] Evento ${evento} desabilitado nas configurações`)
+      return
+    }
 
     console.log('[Webhook ZAPI] Iniciando envio de notificação WhatsApp...')
+
+    // Obter configurações da ZAPI
+    const tipoEnvio = (salaoData as any).zapi_tipo_envio || 'texto'
+    const delay = (salaoData as any).zapi_delay || 2
+
+    let payload: ZAPIPayload | ZAPIPayloadComDocumento
+
+    // Escolher formato de payload baseado na configuração
+    if (tipoEnvio === 'documento' && (salaoData as any).zapi_documento_url) {
+      // Enviar com documento
+      payload = formatarPayloadZAPIComDocumento(evento, {
+        ...agendamento,
+        salao: salaoData
+      }, {
+        documento_url: (salaoData as any).zapi_documento_url,
+        documento_nome: (salaoData as any).zapi_documento_nome,
+        documento_extensao: (salaoData as any).zapi_documento_extensao,
+        documento_descricao: (salaoData as any).zapi_documento_descricao,
+        delay
+      })
+
+      console.log('[Webhook ZAPI] Enviando mensagem COM documento')
+    } else {
+      // Enviar apenas texto
+      payload = formatarPayloadZAPI(evento, {
+        ...agendamento,
+        salao: salaoData
+      }, delay)
+
+      console.log('[Webhook ZAPI] Enviando mensagem de TEXTO')
+    }
 
     // Enviar webhook (com retry automático)
     const sucesso = await enviarWebhook(salaoData.webhook_url!, payload)
 
-    // Se falhou, tentar uma vez mais após 2 segundos
+    // Se falhou, tentar uma vez mais após o delay configurado
     if (!sucesso) {
-      console.log('[Webhook ZAPI] Tentando reenvio em 2 segundos...')
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      console.log(`[Webhook ZAPI] Tentando reenvio em ${delay} segundos...`)
+      await new Promise(resolve => setTimeout(resolve, delay * 1000))
       await enviarWebhook(salaoData.webhook_url!, payload)
     }
   } catch (error) {

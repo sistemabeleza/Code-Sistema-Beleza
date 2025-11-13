@@ -19,7 +19,16 @@ export async function GET(request: NextRequest) {
       where: { id: salaoId },
       select: {
         automacao_ativa: true,
-        webhook_url: true
+        webhook_url: true,
+        zapi_tipo_envio: true,
+        zapi_delay: true,
+        zapi_enviar_confirmacao: true,
+        zapi_enviar_atualizacao: true,
+        zapi_enviar_cancelamento: true,
+        zapi_documento_url: true,
+        zapi_documento_nome: true,
+        zapi_documento_extensao: true,
+        zapi_documento_descricao: true
       }
     })
 
@@ -44,7 +53,20 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { salaoId, automacao_ativa, webhook_url } = body
+    const { 
+      salaoId, 
+      automacao_ativa, 
+      webhook_url,
+      zapi_tipo_envio,
+      zapi_delay,
+      zapi_enviar_confirmacao,
+      zapi_enviar_atualizacao,
+      zapi_enviar_cancelamento,
+      zapi_documento_url,
+      zapi_documento_nome,
+      zapi_documento_extensao,
+      zapi_documento_descricao
+    } = body
 
     if (!salaoId) {
       return NextResponse.json(
@@ -73,17 +95,43 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Validar delay (1-15 segundos)
+    if (zapi_delay && (zapi_delay < 1 || zapi_delay > 15)) {
+      return NextResponse.json(
+        { error: 'O atraso deve estar entre 1 e 15 segundos' },
+        { status: 400 }
+      )
+    }
+
     const salaoAtualizado = await prisma.salao.update({
       where: { id: salaoId },
       data: {
         automacao_ativa: Boolean(automacao_ativa),
-        webhook_url: webhook_url || null
+        webhook_url: webhook_url || null,
+        zapi_tipo_envio: zapi_tipo_envio || 'texto',
+        zapi_delay: zapi_delay || 2,
+        zapi_enviar_confirmacao: zapi_enviar_confirmacao ?? true,
+        zapi_enviar_atualizacao: zapi_enviar_atualizacao ?? true,
+        zapi_enviar_cancelamento: zapi_enviar_cancelamento ?? true,
+        zapi_documento_url: zapi_documento_url || null,
+        zapi_documento_nome: zapi_documento_nome || null,
+        zapi_documento_extensao: zapi_documento_extensao || null,
+        zapi_documento_descricao: zapi_documento_descricao || null
       },
       select: {
         id: true,
         nome: true,
         automacao_ativa: true,
-        webhook_url: true
+        webhook_url: true,
+        zapi_tipo_envio: true,
+        zapi_delay: true,
+        zapi_enviar_confirmacao: true,
+        zapi_enviar_atualizacao: true,
+        zapi_enviar_cancelamento: true,
+        zapi_documento_url: true,
+        zapi_documento_nome: true,
+        zapi_documento_extensao: true,
+        zapi_documento_descricao: true
       }
     })
 

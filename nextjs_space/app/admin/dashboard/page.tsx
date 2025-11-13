@@ -22,6 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { ModalConfigZAPI } from './_components/ModalConfigZAPI'
 
 interface User {
   id: string
@@ -52,11 +53,6 @@ export default function AdminDashboardPage() {
   const [usuarioParaDeletar, setUsuarioParaDeletar] = useState<User | null>(null)
   const [novoPlano, setNovoPlano] = useState('')
   const [modalWebhookAberto, setModalWebhookAberto] = useState(false)
-  const [webhookConfig, setWebhookConfig] = useState({
-    automacao_ativa: false,
-    webhook_url: ''
-  })
-  const [testando, setTestando] = useState(false)
 
   const [novoUsuario, setNovoUsuario] = useState({
     name: '',
@@ -287,111 +283,7 @@ export default function AdminDashboardPage() {
       return
     }
     setUsuarioSelecionado(user)
-    setWebhookConfig({
-      automacao_ativa: false,
-      webhook_url: ''
-    })
     setModalWebhookAberto(true)
-    
-    // Carregar configuração atual do webhook
-    carregarWebhookConfig(user.salao.id)
-  }
-
-  const carregarWebhookConfig = async (salaoId: string) => {
-    try {
-      const response = await fetch(`/api/admin/webhook?salaoId=${salaoId}`)
-      if (response.ok) {
-        const data = await response.json()
-        setWebhookConfig({
-          automacao_ativa: data.automacao_ativa || false,
-          webhook_url: data.webhook_url || ''
-        })
-      }
-    } catch (error) {
-      console.error('Erro ao carregar configuração de webhook:', error)
-    }
-  }
-
-  const handleSalvarWebhook = async () => {
-    if (!usuarioSelecionado?.salao) {
-      toast.error('Salão não encontrado')
-      return
-    }
-
-    // Validar URL se a automação estiver ativa
-    if (webhookConfig.automacao_ativa && !webhookConfig.webhook_url.trim()) {
-      toast.error('Informe a URL do webhook')
-      return
-    }
-
-    // Validar formato da URL
-    if (webhookConfig.webhook_url.trim()) {
-      try {
-        new URL(webhookConfig.webhook_url)
-      } catch {
-        toast.error('URL inválida. Use o formato: https://exemplo.com/webhook')
-        return
-      }
-    }
-
-    try {
-      const response = await fetch('/api/admin/webhook', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          salaoId: usuarioSelecionado.salao.id,
-          ...webhookConfig
-        })
-      })
-
-      if (response.ok) {
-        toast.success('Configuração de webhook salva com sucesso!')
-        setModalWebhookAberto(false)
-        setUsuarioSelecionado(null)
-        await carregarUsuarios()
-      } else {
-        const data = await response.json()
-        toast.error(data.error || 'Erro ao salvar configuração')
-      }
-    } catch (error) {
-      toast.error('Erro ao salvar configuração de webhook')
-    }
-  }
-
-  const handleTestarWebhook = async () => {
-    if (!usuarioSelecionado?.salao) {
-      toast.error('Salão não encontrado')
-      return
-    }
-
-    if (!webhookConfig.webhook_url.trim()) {
-      toast.error('Informe a URL do webhook para testar')
-      return
-    }
-
-    setTestando(true)
-    try {
-      const response = await fetch('/api/admin/webhook/testar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          salaoId: usuarioSelecionado.salao.id,
-          webhook_url: webhookConfig.webhook_url
-        })
-      })
-
-      const data = await response.json()
-      
-      if (data.sucesso) {
-        toast.success('✓ Webhook testado com sucesso!')
-      } else {
-        toast.error(`✗ Falha no teste: ${data.mensagem}`)
-      }
-    } catch (error) {
-      toast.error('Erro ao testar webhook')
-    } finally {
-      setTestando(false)
-    }
   }
 
   const handleDeletarUsuario = async () => {
@@ -867,164 +759,17 @@ export default function AdminDashboardPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Modal Configurar Webhook */}
-      <Dialog open={modalWebhookAberto} onOpenChange={setModalWebhookAberto}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Webhook className="h-5 w-5 text-purple-600" />
-              Automação Inteligente via Webhook
-            </DialogTitle>
-          </DialogHeader>
-          {usuarioSelecionado?.salao && (
-            <div className="space-y-6">
-              {/* Info do Salão */}
-              <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-                <p className="text-sm text-purple-900 font-semibold">
-                  {usuarioSelecionado.salao.nome}
-                </p>
-                <p className="text-xs text-purple-700 mt-1">
-                  Configurar notificações automáticas para plataformas externas
-                </p>
-              </div>
-
-              {/* Explicação */}
-              <div className="bg-blue-50 p-4 rounded-lg space-y-2">
-                <h4 className="font-semibold text-blue-900 text-sm">ℹ️ Como funciona:</h4>
-                <ul className="text-xs text-blue-800 space-y-1 ml-4 list-disc">
-                  <li>Quando ativado, o sistema enviará notificações para a URL configurada</li>
-                  <li>Eventos: criação, atualização e cancelamento de agendamentos</li>
-                  <li>Útil para integração com Fiqeon, Zapier, Make, n8n, etc.</li>
-                  <li>Falhas no webhook não afetam o funcionamento do sistema</li>
-                </ul>
-              </div>
-
-              {/* Switch Ativar/Desativar */}
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  {webhookConfig.automacao_ativa ? (
-                    <CheckCircle2 className="h-5 w-5 text-green-600" />
-                  ) : (
-                    <XCircle className="h-5 w-5 text-gray-400" />
-                  )}
-                  <div>
-                    <Label className="text-base font-semibold">
-                      {webhookConfig.automacao_ativa ? 'Automação Ativa' : 'Automação Desativada'}
-                    </Label>
-                    <p className="text-xs text-gray-600 mt-1">
-                      {webhookConfig.automacao_ativa 
-                        ? 'Notificações estão sendo enviadas' 
-                        : 'Nenhuma notificação será enviada'}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setWebhookConfig({ ...webhookConfig, automacao_ativa: !webhookConfig.automacao_ativa })}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    webhookConfig.automacao_ativa ? 'bg-green-600' : 'bg-gray-300'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      webhookConfig.automacao_ativa ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
-              </div>
-
-              {/* URL do Webhook */}
-              <div>
-                <Label htmlFor="webhook-url" className="text-sm font-semibold">
-                  URL do Webhook {webhookConfig.automacao_ativa && <span className="text-red-500">*</span>}
-                </Label>
-                <Input
-                  id="webhook-url"
-                  value={webhookConfig.webhook_url}
-                  onChange={(e) => setWebhookConfig({ ...webhookConfig, webhook_url: e.target.value })}
-                  placeholder="https://api.fiqeon.com/webhook/seu-codigo-aqui"
-                  className="mt-2 font-mono text-sm"
-                  disabled={!webhookConfig.automacao_ativa}
-                />
-                <p className="text-xs text-gray-500 mt-2">
-                  Cole aqui a URL fornecida pela plataforma de automação (Fiqeon, Zapier, Make, etc.)
-                </p>
-              </div>
-
-              {/* Botão Testar */}
-              {webhookConfig.webhook_url && (
-                <div className="border-t pt-4">
-                  <Button
-                    variant="outline"
-                    onClick={handleTestarWebhook}
-                    disabled={testando}
-                    className="w-full"
-                  >
-                    {testando ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900 mr-2"></div>
-                        Testando...
-                      </>
-                    ) : (
-                      <>
-                        <Webhook className="mr-2 h-4 w-4" />
-                        Testar Webhook
-                      </>
-                    )}
-                  </Button>
-                  <p className="text-xs text-gray-500 text-center mt-2">
-                    Envia um agendamento de teste para verificar a conexão
-                  </p>
-                </div>
-              )}
-
-              {/* Exemplo de Payload */}
-              <details className="bg-gray-50 p-4 rounded-lg">
-                <summary className="cursor-pointer font-semibold text-sm text-gray-700">
-                  📄 Ver exemplo de payload enviado
-                </summary>
-                <pre className="text-xs bg-gray-900 text-green-400 p-3 rounded mt-3 overflow-x-auto">
-{`{
-  "evento": "agendamento.criado",
-  "timestamp": "2024-11-13T10:30:00Z",
-  "salao": {
-    "id": "abc123",
-    "nome": "Salão Exemplo",
-    "slug": "salao-exemplo"
-  },
-  "agendamento": {
-    "id": "xyz789",
-    "data": "2024-11-15",
-    "hora_inicio": "14:00",
-    "hora_fim": "15:00",
-    "status": "AGENDADO",
-    "valor_cobrado": 50.00
-  },
-  "cliente": {
-    "nome": "João Silva",
-    "telefone": "+5511999999999",
-    "email": "joao@email.com"
-  },
-  "servico": {
-    "nome": "Corte de Cabelo",
-    "preco": 50.00,
-    "duracao_minutos": 60
-  }
-}`}
-                </pre>
-              </details>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setModalWebhookAberto(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleSalvarWebhook} className="bg-purple-600 hover:bg-purple-700">
-              <Webhook className="mr-2 h-4 w-4" />
-              Salvar Configuração
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Modal Configurar Webhook ZAPI */}
+      <ModalConfigZAPI 
+        aberto={modalWebhookAberto}
+        salaoId={usuarioSelecionado?.salao?.id || null}
+        salaoNome={usuarioSelecionado?.salao?.nome || ''}
+        onFechar={() => setModalWebhookAberto(false)}
+        onSucesso={() => {
+          toast.success('Configuração salva com sucesso!')
+          carregarUsuarios()
+        }}
+      />
 
       {/* Alert Dialog Deletar */}
       <AlertDialog open={deleteDialogAberto} onOpenChange={setDeleteDialogAberto}>
