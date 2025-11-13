@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { enviarWebhookAgendamento } from '@/lib/webhook-utils'
 
 export async function PATCH(
   request: NextRequest,
@@ -46,8 +47,14 @@ export async function PATCH(
       include: {
         cliente: true,
         profissional: true,
-        servico: true
+        servico: true,
+        salao: true // Incluir dados do salão para webhook
       }
+    })
+
+    // Enviar webhook de automação (se configurado)
+    enviarWebhookAgendamento('agendamento.atualizado', agendamentoAtualizado).catch(err => {
+      console.error('[API] Erro ao enviar webhook (ignorado):', err)
     })
 
     // Se o status mudou para REALIZADO, registrar automaticamente como receita
@@ -97,11 +104,17 @@ export async function DELETE(
 
     const { id } = params
 
-    // Verificar se o agendamento pertence ao salão
+    // Buscar agendamento com todas as relações antes de deletar (para webhook)
     const agendamento = await prisma.agendamento.findFirst({
       where: {
         id,
         salao_id: session.user.salao_id
+      },
+      include: {
+        cliente: true,
+        profissional: true,
+        servico: true,
+        salao: true
       }
     })
 
@@ -112,8 +125,14 @@ export async function DELETE(
       )
     }
 
+    // Deletar agendamento
     await prisma.agendamento.delete({
       where: { id }
+    })
+
+    // Enviar webhook de automação (se configurado)
+    enviarWebhookAgendamento('agendamento.cancelado', agendamento).catch(err => {
+      console.error('[API] Erro ao enviar webhook (ignorado):', err)
     })
 
     return NextResponse.json({

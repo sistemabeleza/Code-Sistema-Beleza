@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { enviarWebhookAgendamento } from '@/lib/webhook-utils'
 
 export async function GET(request: NextRequest) {
   try {
@@ -111,8 +112,15 @@ export async function POST(request: NextRequest) {
       include: {
         cliente: true,
         profissional: true,
-        servico: true
+        servico: true,
+        salao: true // Incluir dados do salão para webhook
       }
+    })
+
+    // Enviar webhook de automação (se configurado)
+    // Não aguarda conclusão para não atrasar a resposta ao usuário
+    enviarWebhookAgendamento('agendamento.criado', agendamento).catch(err => {
+      console.error('[API] Erro ao enviar webhook (ignorado):', err)
     })
 
     return NextResponse.json({

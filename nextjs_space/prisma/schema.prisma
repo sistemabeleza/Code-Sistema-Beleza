@@ -36,6 +36,11 @@ model Salao {
   subscription_start_date DateTime?        // Data de início da assinatura paga
   subscription_end_date   DateTime?        // Data de expiração da assinatura (30 dias após pagamento)
   cakto_transaction_id    String?          // ID da transação Cakto para identificação única
+  
+  // Automação Inteligente (opcional)
+  automacao_ativa     Boolean              @default(false)  // Ativa/desativa webhook de automação
+  webhook_url         String?              // URL para envio de eventos de agendamento
+  
   data_criacao        DateTime             @default(now())
   data_atualizacao    DateTime             @updatedAt
 

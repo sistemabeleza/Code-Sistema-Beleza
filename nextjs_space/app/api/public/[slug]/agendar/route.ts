@@ -1,6 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { enviarWebhookAgendamento } from '@/lib/webhook-utils'
 
 export async function POST(
   request: NextRequest,
@@ -18,14 +19,11 @@ export async function POST(
       )
     }
 
-    // Busca o salão
+    // Busca o salão (incluindo dados para webhook)
     const salao = await prisma.salao.findUnique({
       where: {
         slug: slug,
         status: 'ATIVO'
-      },
-      select: {
-        id: true
       }
     })
 
@@ -147,6 +145,15 @@ export async function POST(
         profissional: true,
         cliente: true
       }
+    })
+
+    // Enviar webhook de automação (se configurado)
+    // Passamos os dados do salão explicitamente
+    enviarWebhookAgendamento('agendamento.criado', {
+      ...agendamento,
+      salao
+    }).catch(err => {
+      console.error('[API Public] Erro ao enviar webhook (ignorado):', err)
     })
 
     return NextResponse.json(agendamento, { status: 201 })

@@ -44,7 +44,9 @@ export async function GET(request: NextRequest) {
         subscription_start_date: true,
         subscription_end_date: true,
         is_trial_active: true,
-        cakto_transaction_id: true
+        cakto_transaction_id: true,
+        automacao_ativa: true,
+        webhook_url: true
       }
     })
 
@@ -164,7 +166,8 @@ export async function PUT(request: NextRequest) {
     const allowedFields = [
       'nome', 'document_type', 'document', 'telefone', 'email', 'endereco',
       'horario_funcionamento', 'logo', 'foto_1', 'foto_2', 'slug', 'descricao',
-      'cor_tema', 'instagram_handle', 'whatsapp_number', 'timezone'
+      'cor_tema', 'instagram_handle', 'whatsapp_number', 'timezone',
+      'automacao_ativa', 'webhook_url'
     ]
 
     allowedFields.forEach(field => {

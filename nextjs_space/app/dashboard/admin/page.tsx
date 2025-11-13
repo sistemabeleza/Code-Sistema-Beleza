@@ -2,14 +2,15 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Shield, UserPlus, Users, Trash2, KeyRound } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Shield, UserPlus, Users, Trash2, KeyRound, Zap, CheckCircle, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
+import { Switch } from '@/components/ui/switch'
 import { toast } from 'sonner'
 
 interface Usuario {
@@ -35,6 +36,12 @@ export default function AdminPage() {
   const [modalUsuario, setModalUsuario] = useState(false)
   const [modalResetSenha, setModalResetSenha] = useState(false)
   const [usuarioSelecionado, setUsuarioSelecionado] = useState<Usuario | null>(null)
+  
+  // Estados para Automação Inteligente
+  const [automacaoAtiva, setAutomacaoAtiva] = useState(false)
+  const [webhookUrl, setWebhookUrl] = useState('')
+  const [testando, setTestando] = useState(false)
+  const [salvandoWebhook, setSalvandoWebhook] = useState(false)
   
   const [formUsuario, setFormUsuario] = useState({
     name: '',
@@ -70,10 +77,72 @@ export default function AdminPage() {
 
       setUsuarios(usuariosData.usuarios || [])
       setSaloes(saloesData.saloes || [saloesData.salao])
+      
+      // Carregar configurações de automação
+      const salao = saloesData.salao || saloesData.saloes?.[0]
+      if (salao) {
+        setAutomacaoAtiva(salao.automacao_ativa || false)
+        setWebhookUrl(salao.webhook_url || '')
+      }
     } catch (error) {
       toast.error('Erro ao carregar dados')
     } finally {
       setLoading(false)
+    }
+  }
+  
+  const salvarConfiguracaoWebhook = async () => {
+    try {
+      setSalvandoWebhook(true)
+      const res = await fetch('/api/configuracoes', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          automacao_ativa: automacaoAtiva,
+          webhook_url: webhookUrl
+        })
+      })
+      
+      if (res.ok) {
+        toast.success('Configurações de automação salvas com sucesso!')
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Erro ao salvar configurações')
+      }
+    } catch (error) {
+      toast.error('Erro ao salvar configurações')
+    } finally {
+      setSalvandoWebhook(false)
+    }
+  }
+  
+  const testarWebhook = async () => {
+    if (!webhookUrl || webhookUrl.trim() === '') {
+      toast.error('Configure a URL do webhook antes de testar')
+      return
+    }
+    
+    try {
+      setTestando(true)
+      const res = await fetch('/api/automacao/testar-webhook', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          webhook_url: webhookUrl
+        })
+      })
+      
+      const data = await res.json()
+      
+      if (data.sucesso) {
+        toast.success(data.mensagem || 'Webhook testado com sucesso!')
+      } else {
+        toast.error(data.mensagem || 'Falha ao testar webhook')
+      }
+    } catch (error) {
+      toast.error('Erro ao testar webhook')
+    } finally {
+      setTestando(false)
     }
   }
 
@@ -197,13 +266,104 @@ export default function AdminPage() {
             <Shield className="mr-2 h-6 w-6" />
             Painel Admin
           </h1>
-          <p className="text-gray-600 mt-1">Gerenciamento de usuários do sistema</p>
+          <p className="text-gray-600 mt-1">Gerenciamento de usuários e automações do sistema</p>
         </div>
         <Button onClick={abrirModalUsuario}>
           <UserPlus className="mr-2 h-4 w-4" />
           Novo Usuário
         </Button>
       </div>
+
+      {/* Seção de Automação Inteligente */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Zap className="mr-2 h-5 w-5 text-primary" />
+            Automação Inteligente
+          </CardTitle>
+          <CardDescription>
+            Configure webhooks para integrar com plataformas externas (Fiqeon, Z-API, etc.) e automatizar o envio de mensagens aos clientes
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+            <div className="flex-1">
+              <Label htmlFor="automacao-ativa" className="text-base font-medium cursor-pointer">
+                Ativar Automação
+              </Label>
+              <p className="text-sm text-muted-foreground mt-1">
+                Quando ativada, eventos de agendamento serão enviados automaticamente para a URL configurada
+              </p>
+            </div>
+            <Switch
+              id="automacao-ativa"
+              checked={automacaoAtiva}
+              onCheckedChange={setAutomacaoAtiva}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="webhook-url">URL do Webhook</Label>
+            <div className="flex gap-2">
+              <Input
+                id="webhook-url"
+                type="url"
+                value={webhookUrl}
+                onChange={(e) => setWebhookUrl(e.target.value)}
+                placeholder="https://sua-plataforma.com/webhook/agendamentos"
+                className="flex-1"
+              />
+              <Button
+                variant="outline"
+                onClick={testarWebhook}
+                disabled={testando || !webhookUrl}
+              >
+                {testando ? 'Testando...' : 'Testar'}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Esta URL receberá notificações em tempo real sempre que um agendamento for criado, atualizado ou cancelado
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between pt-2">
+            <div className="flex items-center gap-2">
+              {automacaoAtiva && webhookUrl ? (
+                <>
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <span className="text-sm text-green-600 font-medium">Automação configurada</span>
+                </>
+              ) : (
+                <>
+                  <XCircle className="h-4 w-4 text-gray-400" />
+                  <span className="text-sm text-gray-500">Automação desativada</span>
+                </>
+              )}
+            </div>
+            <Button
+              onClick={salvarConfiguracaoWebhook}
+              disabled={salvandoWebhook}
+            >
+              {salvandoWebhook ? 'Salvando...' : 'Salvar Configurações'}
+            </Button>
+          </div>
+
+          {/* Documentação rápida */}
+          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <h4 className="text-sm font-semibold text-blue-900 mb-2">📚 Eventos Disponíveis</h4>
+            <ul className="text-xs text-blue-800 space-y-1">
+              <li>• <strong>agendamento.criado</strong> - Quando um novo agendamento é criado (manual ou via site)</li>
+              <li>• <strong>agendamento.atualizado</strong> - Quando um agendamento é confirmado ou alterado</li>
+              <li>• <strong>agendamento.cancelado</strong> - Quando um agendamento é cancelado</li>
+            </ul>
+            <h4 className="text-sm font-semibold text-blue-900 mt-3 mb-2">🔌 APIs de Consulta</h4>
+            <ul className="text-xs text-blue-800 space-y-1">
+              <li>• <code>GET /api/automacao/agenda?salao_id=xxx&data=2025-11-15</code></li>
+              <li>• <code>GET /api/automacao/clientes-inativos?salao_id=xxx&dias=15</code></li>
+            </ul>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
