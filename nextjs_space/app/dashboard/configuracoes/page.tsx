@@ -8,7 +8,9 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
-import { ExternalLink, Instagram, MessageCircle, Copy, Crown, Zap, Rocket } from 'lucide-react'
+import { ExternalLink, Instagram, MessageCircle, Copy, Crown, Zap, Rocket, Send, CheckCircle2 } from 'lucide-react'
+import { Switch } from '@/components/ui/switch'
+import { Checkbox } from '@/components/ui/checkbox'
 
 export default function ConfiguracoesPage() {
   const [loading, setLoading] = useState(true)
@@ -27,6 +29,23 @@ export default function ConfiguracoesPage() {
     whatsapp_number: '',
     timezone: 'America/Sao_Paulo'
   })
+
+  // Estado para configurações ZAPI
+  const [zapiConfig, setZapiConfig] = useState({
+    automacao_ativa: false,
+    zapi_instancia: '',
+    zapi_token: '',
+    zapi_tipo_envio: 'texto',
+    zapi_delay: 2,
+    zapi_enviar_confirmacao: true,
+    zapi_enviar_atualizacao: true,
+    zapi_enviar_cancelamento: true,
+    zapi_documento_url: '',
+    zapi_documento_nome: '',
+    zapi_documento_extensao: '.pdf',
+    zapi_documento_descricao: ''
+  })
+  const [testando, setTestando] = useState(false)
 
   useEffect(() => {
     carregarConfiguracoes()
@@ -50,6 +69,33 @@ export default function ConfiguracoesPage() {
           instagram_handle: data.instagram_handle || '',
           whatsapp_number: data.whatsapp_number || '',
           timezone: data.timezone || 'America/Sao_Paulo'
+        })
+        
+        // Carregar configurações ZAPI
+        // Extrair instância e token da webhook_url se existir
+        let instancia = ''
+        let token = ''
+        if (data.webhook_url && data.webhook_url.includes('z-api.io')) {
+          const match = data.webhook_url.match(/instances\/([^/]+)\/token\/([^/]+)/)
+          if (match) {
+            instancia = match[1]
+            token = match[2]
+          }
+        }
+        
+        setZapiConfig({
+          automacao_ativa: data.automacao_ativa || false,
+          zapi_instancia: instancia,
+          zapi_token: token,
+          zapi_tipo_envio: data.zapi_tipo_envio || 'texto',
+          zapi_delay: data.zapi_delay || 2,
+          zapi_enviar_confirmacao: data.zapi_enviar_confirmacao !== false,
+          zapi_enviar_atualizacao: data.zapi_enviar_atualizacao !== false,
+          zapi_enviar_cancelamento: data.zapi_enviar_cancelamento !== false,
+          zapi_documento_url: data.zapi_documento_url || '',
+          zapi_documento_nome: data.zapi_documento_nome || '',
+          zapi_documento_extensao: data.zapi_documento_extensao || '.pdf',
+          zapi_documento_descricao: data.zapi_documento_descricao || ''
         })
         
         // Armazenar informações de assinatura
@@ -122,6 +168,101 @@ export default function ConfiguracoesPage() {
     const url = `${window.location.origin}/agendamento/${formData.slug}`
     navigator.clipboard.writeText(url)
     toast.success('Link copiado!')
+  }
+
+  async function salvarZapi() {
+    // Validações
+    if (zapiConfig.automacao_ativa) {
+      if (!zapiConfig.zapi_instancia || zapiConfig.zapi_instancia.trim() === '') {
+        toast.error('Informe a Instância da ZAPI')
+        return
+      }
+      if (!zapiConfig.zapi_token || zapiConfig.zapi_token.trim() === '') {
+        toast.error('Informe o Token da ZAPI')
+        return
+      }
+      
+      // Se for envio com documento, validar URL do documento
+      if (zapiConfig.zapi_tipo_envio === 'documento' && (!zapiConfig.zapi_documento_url || zapiConfig.zapi_documento_url.trim() === '')) {
+        toast.error('Informe a URL do documento para envio')
+        return
+      }
+    }
+
+    try {
+      setSalvando(true)
+      
+      // Construir a webhook_url no formato correto da ZAPI
+      const endpoint = zapiConfig.zapi_tipo_envio === 'documento' ? 'send-document' : 'send-text'
+      const webhook_url = zapiConfig.automacao_ativa && zapiConfig.zapi_instancia && zapiConfig.zapi_token
+        ? `https://api.z-api.io/instances/${zapiConfig.zapi_instancia}/token/${zapiConfig.zapi_token}/${endpoint}`
+        : null
+
+      const payload = {
+        automacao_ativa: zapiConfig.automacao_ativa,
+        webhook_url: webhook_url,
+        zapi_tipo_envio: zapiConfig.zapi_tipo_envio,
+        zapi_delay: zapiConfig.zapi_delay,
+        zapi_enviar_confirmacao: zapiConfig.zapi_enviar_confirmacao,
+        zapi_enviar_atualizacao: zapiConfig.zapi_enviar_atualizacao,
+        zapi_enviar_cancelamento: zapiConfig.zapi_enviar_cancelamento,
+        zapi_documento_url: zapiConfig.zapi_documento_url,
+        zapi_documento_nome: zapiConfig.zapi_documento_nome,
+        zapi_documento_extensao: zapiConfig.zapi_documento_extensao,
+        zapi_documento_descricao: zapiConfig.zapi_documento_descricao
+      }
+
+      const res = await fetch('/api/configuracoes/zapi', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+
+      if (res.ok) {
+        toast.success('Configurações ZAPI salvas com sucesso!')
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Erro ao salvar configurações ZAPI')
+      }
+    } catch (error) {
+      console.error('Erro ao salvar ZAPI:', error)
+      toast.error('Erro ao salvar configurações ZAPI')
+    } finally {
+      setSalvando(false)
+    }
+  }
+
+  async function testarZapi() {
+    if (!zapiConfig.zapi_instancia || !zapiConfig.zapi_token) {
+      toast.error('Preencha a Instância e o Token antes de testar')
+      return
+    }
+
+    try {
+      setTestando(true)
+      
+      // Primeiro salvar as configurações
+      await salvarZapi()
+      
+      // Depois testar
+      const res = await fetch('/api/configuracoes/zapi/testar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+
+      const data = await res.json()
+
+      if (data.sucesso) {
+        toast.success(data.mensagem || 'Teste enviado com sucesso! Verifique o WhatsApp.')
+      } else {
+        toast.error(data.mensagem || 'Erro ao testar webhook')
+      }
+    } catch (error) {
+      console.error('Erro ao testar ZAPI:', error)
+      toast.error('Erro ao testar conexão com ZAPI')
+    } finally {
+      setTestando(false)
+    }
   }
 
   if (loading) {
@@ -347,6 +488,269 @@ export default function ConfiguracoesPage() {
                 </SelectContent>
               </Select>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Automação WhatsApp - ZAPI */}
+        <Card className="border-green-200 bg-gradient-to-br from-green-50 to-emerald-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Send className="h-5 w-5 text-green-600" />
+              Automação WhatsApp (ZAPI)
+            </CardTitle>
+            <CardDescription>
+              Configure o envio automático de mensagens via WhatsApp para seus clientes
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Toggle Ativar/Desativar */}
+            <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-green-200">
+              <div className="space-y-1">
+                <Label htmlFor="automacao-toggle" className="text-base font-medium">
+                  Ativar Automação WhatsApp
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Envie mensagens automáticas quando houver novos agendamentos
+                </p>
+              </div>
+              <Switch
+                id="automacao-toggle"
+                checked={zapiConfig.automacao_ativa}
+                onCheckedChange={(checked) => setZapiConfig(prev => ({ ...prev, automacao_ativa: checked }))}
+              />
+            </div>
+
+            {zapiConfig.automacao_ativa && (
+              <>
+                {/* Credenciais ZAPI */}
+                <div className="space-y-4 p-4 bg-white rounded-lg border border-green-200">
+                  <h3 className="font-medium text-sm flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    Credenciais da ZAPI
+                  </h3>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="zapi-instancia">Instância ZAPI *</Label>
+                    <Input
+                      id="zapi-instancia"
+                      value={zapiConfig.zapi_instancia}
+                      onChange={(e) => setZapiConfig(prev => ({ ...prev, zapi_instancia: e.target.value }))}
+                      placeholder="Ex: 3BA2DA29C1B66"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Encontre sua instância no painel da ZAPI (ID da instância)
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="zapi-token">Token ZAPI *</Label>
+                    <Input
+                      id="zapi-token"
+                      value={zapiConfig.zapi_token}
+                      onChange={(e) => setZapiConfig(prev => ({ ...prev, zapi_token: e.target.value }))}
+                      placeholder="Ex: F176a0a87a57d4bfa9a36354435766896S"
+                      type="password"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Token de autenticação da sua instância ZAPI
+                    </p>
+                  </div>
+
+                  {/* URL Gerada */}
+                  {zapiConfig.zapi_instancia && zapiConfig.zapi_token && (
+                    <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+                      <p className="text-xs font-medium text-green-800 mb-1">URL Webhook Gerada:</p>
+                      <code className="text-xs text-green-700 break-all">
+                        https://api.z-api.io/instances/{zapiConfig.zapi_instancia}/token/{zapiConfig.zapi_token}/send-text
+                      </code>
+                    </div>
+                  )}
+                </div>
+
+                {/* Tipo de Envio */}
+                <div className="space-y-4 p-4 bg-white rounded-lg border border-green-200">
+                  <h3 className="font-medium text-sm flex items-center gap-2">
+                    <MessageCircle className="h-4 w-4 text-green-600" />
+                    Configurações de Mensagem
+                  </h3>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="tipo-envio">Tipo de Envio</Label>
+                    <Select 
+                      value={zapiConfig.zapi_tipo_envio} 
+                      onValueChange={(value) => setZapiConfig(prev => ({ ...prev, zapi_tipo_envio: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="texto">Apenas Texto</SelectItem>
+                        <SelectItem value="documento">Texto + Documento (PDF, etc)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="zapi-delay">Atraso de Envio (segundos)</Label>
+                    <Input
+                      id="zapi-delay"
+                      type="number"
+                      min="1"
+                      max="15"
+                      value={zapiConfig.zapi_delay}
+                      onChange={(e) => setZapiConfig(prev => ({ ...prev, zapi_delay: parseInt(e.target.value) || 2 }))}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Tempo de espera antes de enviar a mensagem (1-15 segundos)
+                    </p>
+                  </div>
+
+                  {/* Opções de Notificação */}
+                  <div className="space-y-3">
+                    <Label>Enviar notificações para:</Label>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="enviar-confirmacao"
+                        checked={zapiConfig.zapi_enviar_confirmacao}
+                        onCheckedChange={(checked) => setZapiConfig(prev => ({ ...prev, zapi_enviar_confirmacao: checked as boolean }))}
+                      />
+                      <label
+                        htmlFor="enviar-confirmacao"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        Novos agendamentos (confirmação)
+                      </label>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="enviar-atualizacao"
+                        checked={zapiConfig.zapi_enviar_atualizacao}
+                        onCheckedChange={(checked) => setZapiConfig(prev => ({ ...prev, zapi_enviar_atualizacao: checked as boolean }))}
+                      />
+                      <label
+                        htmlFor="enviar-atualizacao"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        Atualizações de agendamento
+                      </label>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="enviar-cancelamento"
+                        checked={zapiConfig.zapi_enviar_cancelamento}
+                        onCheckedChange={(checked) => setZapiConfig(prev => ({ ...prev, zapi_enviar_cancelamento: checked as boolean }))}
+                      />
+                      <label
+                        htmlFor="enviar-cancelamento"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        Cancelamentos de agendamento
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Configurações de Documento (se tipo_envio = documento) */}
+                {zapiConfig.zapi_tipo_envio === 'documento' && (
+                  <div className="space-y-4 p-4 bg-white rounded-lg border border-green-200">
+                    <h3 className="font-medium text-sm flex items-center gap-2">
+                      <ExternalLink className="h-4 w-4 text-green-600" />
+                      Configurações do Documento
+                    </h3>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="doc-url">URL do Documento *</Label>
+                      <Input
+                        id="doc-url"
+                        value={zapiConfig.zapi_documento_url}
+                        onChange={(e) => setZapiConfig(prev => ({ ...prev, zapi_documento_url: e.target.value }))}
+                        placeholder="https://exemplo.com/documento.pdf"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        URL pública do documento a ser enviado junto com a mensagem
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="doc-nome">Nome do Arquivo</Label>
+                        <Input
+                          id="doc-nome"
+                          value={zapiConfig.zapi_documento_nome}
+                          onChange={(e) => setZapiConfig(prev => ({ ...prev, zapi_documento_nome: e.target.value }))}
+                          placeholder="Comprovante"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="doc-extensao">Extensão</Label>
+                        <Select 
+                          value={zapiConfig.zapi_documento_extensao} 
+                          onValueChange={(value) => setZapiConfig(prev => ({ ...prev, zapi_documento_extensao: value }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value=".pdf">.pdf</SelectItem>
+                            <SelectItem value=".docx">.docx</SelectItem>
+                            <SelectItem value=".jpg">.jpg</SelectItem>
+                            <SelectItem value=".png">.png</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="doc-descricao">Descrição/Caption</Label>
+                      <Textarea
+                        id="doc-descricao"
+                        value={zapiConfig.zapi_documento_descricao}
+                        onChange={(e) => setZapiConfig(prev => ({ ...prev, zapi_documento_descricao: e.target.value }))}
+                        placeholder="Descrição do documento..."
+                        rows={2}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Botões de Ação */}
+                <div className="flex gap-3">
+                  <Button 
+                    onClick={salvarZapi} 
+                    disabled={salvando}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    {salvando ? 'Salvando...' : 'Salvar Configurações ZAPI'}
+                  </Button>
+                  
+                  <Button 
+                    onClick={testarZapi} 
+                    disabled={testando || !zapiConfig.zapi_instancia || !zapiConfig.zapi_token}
+                    variant="outline"
+                    className="border-green-600 text-green-600 hover:bg-green-50"
+                  >
+                    {testando ? 'Testando...' : 'Testar Conexão'}
+                  </Button>
+                </div>
+
+                {/* Aviso */}
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
+                  <p className="text-sm text-blue-800">
+                    💡 <strong>Como obter suas credenciais ZAPI:</strong>
+                  </p>
+                  <ol className="mt-2 text-xs text-blue-700 space-y-1 list-decimal list-inside">
+                    <li>Acesse o painel da ZAPI (https://api.z-api.io)</li>
+                    <li>Vá em "Instâncias" e selecione sua instância</li>
+                    <li>Copie o ID da Instância e o Token</li>
+                    <li>Cole aqui nos campos acima e clique em "Salvar"</li>
+                  </ol>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
