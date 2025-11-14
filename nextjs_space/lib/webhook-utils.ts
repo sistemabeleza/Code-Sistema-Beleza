@@ -12,6 +12,7 @@
  */
 
 import { Agendamento, Cliente, Profissional, Servico, Salao } from '@prisma/client'
+import { formatarMensagemAutomacao } from './mensagens-automacao'
 
 /**
  * Tipos de eventos suportados
@@ -23,6 +24,7 @@ export type TipoEvento = 'agendamento_criado' | 'agendamento_atualizado' | 'agen
  */
 interface PayloadFiqon {
   evento: TipoEvento
+  timestamp: string
   salao: {
     nome: string
     telefone?: string
@@ -32,13 +34,20 @@ interface PayloadFiqon {
     telefone: string
   }
   agendamento: {
-    data: string           // Formato DD/MM/YYYY
-    hora: string           // Formato HH:MM
-    servico: string
-    profissional: string
-    valor?: number
-    observacoes?: string
+    id: string
+    data: string           // Formato YYYY-MM-DD (para compatibilidade)
+    data_formatada: string // Formato DD/MM/YYYY (para exibição)
+    hora_inicio: string    // Formato HH:MM
+    hora_fim: string       // Formato HH:MM
+    status: string
   }
+  servico: {
+    nome: string
+  }
+  profissional: {
+    nome: string
+  }
+  mensagem_formatada: string  // Mensagem pronta para envio via WhatsApp
 }
 
 /**
@@ -75,6 +84,16 @@ function formatarData(data: Date): string {
 }
 
 /**
+ * Formata data para YYYY-MM-DD (formato ISO)
+ */
+function formatarDataISO(data: Date): string {
+  const ano = data.getFullYear()
+  const mes = String(data.getMonth() + 1).padStart(2, '0')
+  const dia = String(data.getDate()).padStart(2, '0')
+  return `${ano}-${mes}-${dia}`
+}
+
+/**
  * Valida se o webhook está configurado
  */
 function validarWebhook(salao: Salao): boolean {
@@ -92,6 +111,18 @@ function validarWebhook(salao: Salao): boolean {
 }
 
 /**
+ * Formata hora para HH:MM
+ */
+function formatarHora(hora: Date | string): string {
+  if (typeof hora === 'string') {
+    // Se já é string, extrai apenas HH:MM
+    return hora.slice(0, 5)
+  }
+  // Se é Date, converte para string HH:MM
+  return hora.toTimeString().slice(0, 5)
+}
+
+/**
  * Monta payload para enviar à Fiqon
  */
 function montarPayload(
@@ -99,24 +130,58 @@ function montarPayload(
   salao: Salao,
   evento: TipoEvento
 ): PayloadFiqon {
-  return {
-    evento,
+  // Formata hora_inicio e hora_fim
+  const horaInicio = formatarHora(agendamento.hora_inicio)
+  const horaFim = formatarHora(agendamento.hora_fim)
+
+  // Mapeia evento para formato da mensagem
+  let eventoMensagem: 'agendamento_criado' | 'agendamento_atualizado' | 'agendamento_cancelado' | 'agendamento_lembrete'
+  
+  if (evento === 'lembrete_dia') {
+    eventoMensagem = 'agendamento_lembrete'
+  } else {
+    eventoMensagem = evento as 'agendamento_criado' | 'agendamento_atualizado' | 'agendamento_cancelado'
+  }
+
+  // Monta o payload base
+  const payloadBase = {
+    evento: eventoMensagem,
+    timestamp: new Date().toISOString(),
     salao: {
       nome: salao.nome,
-      telefone: salao.telefone || undefined
+      telefone: salao.telefone || ''
+    },
+    agendamento: {
+      id: agendamento.id,
+      data: formatarDataISO(agendamento.data),
+      hora_inicio: horaInicio,
+      hora_fim: horaFim,
+      status: agendamento.status
     },
     cliente: {
       nome: agendamento.cliente.nome,
       telefone: formatarTelefone(agendamento.cliente.telefone)
     },
-    agendamento: {
-      data: formatarData(agendamento.data),
-      hora: typeof agendamento.hora_inicio === 'string' ? agendamento.hora_inicio : agendamento.hora_inicio.toTimeString().slice(0, 8),
-      servico: agendamento.servico.nome,
-      profissional: agendamento.profissional.nome,
-      valor: Number(agendamento.valor_cobrado || agendamento.servico.preco),
-      observacoes: agendamento.observacoes || undefined
+    servico: {
+      nome: agendamento.servico.nome
+    },
+    profissional: {
+      nome: agendamento.profissional.nome
     }
+  }
+
+  // Gera a mensagem formatada
+  const mensagemFormatada = formatarMensagemAutomacao(payloadBase)
+
+  // Retorna o payload completo com a mensagem formatada
+  return {
+    ...payloadBase,
+    evento: evento, // Mantém o evento original no payload
+    agendamento: {
+      ...payloadBase.agendamento,
+      data_formatada: formatarData(agendamento.data)
+    },
+    mensagem_formatada: mensagemFormatada
   }
 }
 
@@ -127,7 +192,7 @@ async function enviarParaFiqon(webhookUrl: string, payload: PayloadFiqon): Promi
   try {
     console.log(`[Webhook Fiqon] Enviando evento: ${payload.evento}`)
     console.log(`[Webhook Fiqon] Cliente: ${payload.cliente.nome} - ${payload.cliente.telefone}`)
-    console.log(`[Webhook Fiqon] Agendamento: ${payload.agendamento.data} às ${payload.agendamento.hora}`)
+    console.log(`[Webhook Fiqon] Agendamento: ${payload.agendamento.data_formatada} às ${payload.agendamento.hora_inicio}`)
 
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 10000) // 10 segundos
@@ -229,23 +294,46 @@ export async function testarWebhook(salao: Salao, telefone: string = '5511999999
       }
     }
 
-    const payloadTeste: PayloadFiqon = {
-      evento: 'agendamento_criado',
+    const dataHoje = new Date()
+    
+    // Monta payload base
+    const payloadBase = {
+      evento: 'agendamento_criado' as const,
+      timestamp: new Date().toISOString(),
       salao: {
         nome: salao.nome,
-        telefone: salao.telefone || undefined
+        telefone: salao.telefone || ''
       },
       cliente: {
         nome: 'Cliente Teste',
         telefone: formatarTelefone(telefone)
       },
       agendamento: {
-        data: formatarData(new Date()),
-        hora: '14:00',
-        servico: 'Serviço de Teste',
-        profissional: 'Profissional Teste',
-        valor: 50.00
+        id: 'teste-999',
+        data: formatarDataISO(dataHoje),
+        hora_inicio: '14:00',
+        hora_fim: '15:00',
+        status: 'confirmado'
+      },
+      servico: {
+        nome: 'Serviço de Teste'
+      },
+      profissional: {
+        nome: 'Profissional Teste'
       }
+    }
+
+    // Gera a mensagem formatada
+    const mensagemFormatada = formatarMensagemAutomacao(payloadBase)
+
+    // Payload completo
+    const payloadTeste: PayloadFiqon = {
+      ...payloadBase,
+      agendamento: {
+        ...payloadBase.agendamento,
+        data_formatada: formatarData(dataHoje)
+      },
+      mensagem_formatada: mensagemFormatada
     }
 
     const sucesso = await enviarParaFiqon(salao.webhook_fiqon, payloadTeste)

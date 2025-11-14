@@ -11,6 +11,121 @@ import { toast } from 'sonner'
 import { ExternalLink, Instagram, MessageCircle, Copy, Crown, Zap, Rocket, Send, CheckCircle2, Bell } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+
+// Componente de Preview de Mensagens
+function PreviewMensagens({ salaoNome, salaoTelefone }: { salaoNome: string, salaoTelefone: string }) {
+  const [tipoEvento, setTipoEvento] = useState<'agendamento_criado' | 'agendamento_atualizado' | 'agendamento_cancelado' | 'agendamento_lembrete'>('agendamento_criado')
+  const [mensagem, setMensagem] = useState('')
+  const [carregando, setCarregando] = useState(false)
+
+  useEffect(() => {
+    carregarPreview()
+  }, [tipoEvento, salaoNome, salaoTelefone])
+
+  async function carregarPreview() {
+    try {
+      setCarregando(true)
+      
+      // Monta payload de exemplo
+      const payload = {
+        evento: tipoEvento,
+        timestamp: new Date().toISOString(),
+        salao: {
+          nome: salaoNome || 'Seu Salão',
+          telefone: salaoTelefone || '(00) 00000-0000'
+        },
+        agendamento: {
+          id: 1,
+          data: new Date().toISOString().split('T')[0],
+          hora_inicio: '15:00',
+          hora_fim: '16:00',
+          status: 'confirmado'
+        },
+        cliente: {
+          nome: 'Maria Silva',
+          telefone: '31999999999'
+        },
+        servico: {
+          nome: 'Corte e Escova'
+        },
+        profissional: {
+          nome: 'Ana Paula'
+        }
+      }
+
+      const res = await fetch('/api/mensagens/formatar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        setMensagem(data.mensagem)
+      }
+    } catch (error) {
+      console.error('Erro ao carregar preview:', error)
+    } finally {
+      setCarregando(false)
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      {/* Seletor de Tipo de Evento */}
+      <div className="flex gap-2 flex-wrap">
+        <Button
+          size="sm"
+          variant={tipoEvento === 'agendamento_criado' ? 'default' : 'outline'}
+          onClick={() => setTipoEvento('agendamento_criado')}
+          className={tipoEvento === 'agendamento_criado' ? 'bg-green-600 hover:bg-green-700' : ''}
+        >
+          Criado
+        </Button>
+        <Button
+          size="sm"
+          variant={tipoEvento === 'agendamento_atualizado' ? 'default' : 'outline'}
+          onClick={() => setTipoEvento('agendamento_atualizado')}
+          className={tipoEvento === 'agendamento_atualizado' ? 'bg-blue-600 hover:bg-blue-700' : ''}
+        >
+          Atualizado
+        </Button>
+        <Button
+          size="sm"
+          variant={tipoEvento === 'agendamento_cancelado' ? 'default' : 'outline'}
+          onClick={() => setTipoEvento('agendamento_cancelado')}
+          className={tipoEvento === 'agendamento_cancelado' ? 'bg-red-600 hover:bg-red-700' : ''}
+        >
+          Cancelado
+        </Button>
+        <Button
+          size="sm"
+          variant={tipoEvento === 'agendamento_lembrete' ? 'default' : 'outline'}
+          onClick={() => setTipoEvento('agendamento_lembrete')}
+          className={tipoEvento === 'agendamento_lembrete' ? 'bg-purple-600 hover:bg-purple-700' : ''}
+        >
+          Lembrete
+        </Button>
+      </div>
+
+      {/* Preview da Mensagem */}
+      <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+        {carregando ? (
+          <div className="text-sm text-gray-500">Carregando preview...</div>
+        ) : (
+          <pre className="text-sm whitespace-pre-wrap font-sans text-gray-700">
+            {mensagem}
+          </pre>
+        )}
+      </div>
+
+      <p className="text-xs text-gray-600">
+        💬 Esta é a mensagem que será enviada para o cliente via WhatsApp
+      </p>
+    </div>
+  )
+}
 
 export default function ConfiguracoesPage() {
   const [loading, setLoading] = useState(true)
@@ -516,6 +631,15 @@ export default function ConfiguracoesPage() {
                   <p className="mt-2 text-xs text-blue-700">
                     <strong>Eventos enviados:</strong> Agendamento criado, atualizado, cancelado e lembretes diários
                   </p>
+                </div>
+
+                {/* Preview de Mensagens */}
+                <div className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-md">
+                  <h4 className="font-medium text-sm flex items-center gap-2 mb-3">
+                    <MessageCircle className="h-4 w-4 text-green-600" />
+                    Preview das Mensagens Automáticas
+                  </h4>
+                  <PreviewMensagens salaoNome={formData.nome} salaoTelefone={formData.telefone} />
                 </div>
               </>
             )}
