@@ -149,10 +149,10 @@ export async function POST(
 
     // Enviar webhook de automação (se configurado)
     // Passamos os dados do salão explicitamente
-    enviarWebhookAgendamento('agendamento.criado', {
+    enviarWebhookAgendamento({
       ...agendamento,
       salao
-    }).catch(err => {
+    }, salao, 'agendamento_criado').catch(err => {
       console.error('[API Public] Erro ao enviar webhook (ignorado):', err)
     })
 

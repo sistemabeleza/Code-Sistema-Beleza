@@ -111,10 +111,10 @@ function montarPayload(
     },
     agendamento: {
       data: formatarData(agendamento.data),
-      hora: agendamento.hora_inicio,
+      hora: typeof agendamento.hora_inicio === 'string' ? agendamento.hora_inicio : agendamento.hora_inicio.toTimeString().slice(0, 8),
       servico: agendamento.servico.nome,
       profissional: agendamento.profissional.nome,
-      valor: agendamento.valor_cobrado || agendamento.servico.preco,
+      valor: Number(agendamento.valor_cobrado || agendamento.servico.preco),
       observacoes: agendamento.observacoes || undefined
     }
   }

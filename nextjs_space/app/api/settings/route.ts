@@ -46,20 +46,7 @@ export async function GET(request: NextRequest) {
         is_trial_active: true,
         cakto_transaction_id: true,
         automacao_ativa: true,
-        webhook_url: true,
-        zapi_instance_id: true,
-        zapi_token: true,
-        zapi_tipo_envio: true,
-        zapi_delay: true,
-        zapi_enviar_confirmacao: true,
-        zapi_enviar_atualizacao: true,
-        zapi_enviar_cancelamento: true,
-        zapi_enviar_lembretes: true,
-        zapi_horario_lembrete: true,
-        zapi_documento_url: true,
-        zapi_documento_nome: true,
-        zapi_documento_extensao: true,
-        zapi_documento_descricao: true
+        webhook_fiqon: true
       }
     })
 
