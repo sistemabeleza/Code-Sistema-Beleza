@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
-import { ExternalLink, Instagram, MessageCircle, Copy, Crown, Zap, Rocket, Send, CheckCircle2 } from 'lucide-react'
+import { ExternalLink, Instagram, MessageCircle, Copy, Crown, Zap, Rocket, Send, CheckCircle2, Bell } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
 import { Checkbox } from '@/components/ui/checkbox'
 
@@ -40,6 +40,8 @@ export default function ConfiguracoesPage() {
     zapi_enviar_confirmacao: true,
     zapi_enviar_atualizacao: true,
     zapi_enviar_cancelamento: true,
+    zapi_enviar_lembretes: false,
+    zapi_horario_lembrete: '09:00',
     zapi_documento_url: '',
     zapi_documento_nome: '',
     zapi_documento_extensao: '.pdf',
@@ -85,13 +87,15 @@ export default function ConfiguracoesPage() {
         
         setZapiConfig({
           automacao_ativa: data.automacao_ativa || false,
-          zapi_instancia: instancia,
-          zapi_token: token,
+          zapi_instancia: data.zapi_instance_id || instancia,
+          zapi_token: data.zapi_token || token,
           zapi_tipo_envio: data.zapi_tipo_envio || 'texto',
           zapi_delay: data.zapi_delay || 2,
           zapi_enviar_confirmacao: data.zapi_enviar_confirmacao !== false,
           zapi_enviar_atualizacao: data.zapi_enviar_atualizacao !== false,
           zapi_enviar_cancelamento: data.zapi_enviar_cancelamento !== false,
+          zapi_enviar_lembretes: data.zapi_enviar_lembretes || false,
+          zapi_horario_lembrete: data.zapi_horario_lembrete || '09:00',
           zapi_documento_url: data.zapi_documento_url || '',
           zapi_documento_nome: data.zapi_documento_nome || '',
           zapi_documento_extensao: data.zapi_documento_extensao || '.pdf',
@@ -201,11 +205,15 @@ export default function ConfiguracoesPage() {
       const payload = {
         automacao_ativa: zapiConfig.automacao_ativa,
         webhook_url: webhook_url,
+        zapi_instance_id: zapiConfig.zapi_instancia,
+        zapi_token: zapiConfig.zapi_token,
         zapi_tipo_envio: zapiConfig.zapi_tipo_envio,
         zapi_delay: zapiConfig.zapi_delay,
         zapi_enviar_confirmacao: zapiConfig.zapi_enviar_confirmacao,
         zapi_enviar_atualizacao: zapiConfig.zapi_enviar_atualizacao,
         zapi_enviar_cancelamento: zapiConfig.zapi_enviar_cancelamento,
+        zapi_enviar_lembretes: zapiConfig.zapi_enviar_lembretes,
+        zapi_horario_lembrete: zapiConfig.zapi_horario_lembrete,
         zapi_documento_url: zapiConfig.zapi_documento_url,
         zapi_documento_nome: zapiConfig.zapi_documento_nome,
         zapi_documento_extensao: zapiConfig.zapi_documento_extensao,
@@ -247,15 +255,22 @@ export default function ConfiguracoesPage() {
       // Depois testar
       const res = await fetch('/api/configuracoes/zapi/testar', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instance_id: zapiConfig.zapi_instancia,
+          token: zapiConfig.zapi_token,
+          tipo_envio: zapiConfig.zapi_tipo_envio,
+          documento_url: zapiConfig.zapi_documento_url,
+          phone: '5511999999999' // Telefone de teste
+        })
       })
 
       const data = await res.json()
 
-      if (data.sucesso) {
-        toast.success(data.mensagem || 'Teste enviado com sucesso! Verifique o WhatsApp.')
+      if (data.success) {
+        toast.success(data.message || 'Teste enviado com sucesso! Verifique o WhatsApp.')
       } else {
-        toast.error(data.mensagem || 'Erro ao testar webhook')
+        toast.error(data.error || 'Erro ao testar webhook')
       }
     } catch (error) {
       console.error('Erro ao testar ZAPI:', error)
@@ -651,6 +666,44 @@ export default function ConfiguracoesPage() {
                       </label>
                     </div>
                   </div>
+                </div>
+
+                {/* Lembretes Automáticos */}
+                <div className="space-y-4 p-4 bg-white rounded-lg border border-green-200">
+                  <h3 className="font-medium text-sm flex items-center gap-2">
+                    <Bell className="h-4 w-4 text-green-600" />
+                    Lembretes Automáticos do Dia
+                  </h3>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="enviar-lembretes"
+                      checked={zapiConfig.zapi_enviar_lembretes}
+                      onCheckedChange={(checked) => setZapiConfig(prev => ({ ...prev, zapi_enviar_lembretes: checked as boolean }))}
+                    />
+                    <label
+                      htmlFor="enviar-lembretes"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Enviar lembretes automáticos dos agendamentos do dia
+                    </label>
+                  </div>
+
+                  {zapiConfig.zapi_enviar_lembretes && (
+                    <div className="space-y-2 ml-6">
+                      <Label htmlFor="horario-lembrete">Horário de Envio</Label>
+                      <Input
+                        id="horario-lembrete"
+                        type="time"
+                        value={zapiConfig.zapi_horario_lembrete}
+                        onChange={(e) => setZapiConfig(prev => ({ ...prev, zapi_horario_lembrete: e.target.value }))}
+                        className="w-40"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        📅 Os lembretes serão enviados automaticamente neste horário para todos os agendamentos do dia
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Configurações de Documento (se tipo_envio = documento) */}

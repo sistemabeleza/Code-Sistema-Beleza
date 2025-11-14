@@ -491,3 +491,101 @@ export async function testarWebhook(salao: Salao): Promise<{ sucesso: boolean; m
     }
   }
 }
+
+/**
+ * Envia lembrete automático de agendamento via ZAPI
+ * Usado pelo sistema de lembretes automáticos do dia
+ */
+export async function enviarLembreteZAPI(
+  agendamento: Agendamento & {
+    cliente: Cliente
+    servico: Servico
+    profissional: Profissional
+  },
+  salao: Salao
+): Promise<boolean> {
+  try {
+    if (!salao.automacao_ativa || !salao.zapi_enviar_lembretes) {
+      console.log('[Lembrete ZAPI] Lembretes automáticos não estão ativos');
+      return false;
+    }
+
+    if (!salao.zapi_instance_id || !salao.zapi_token) {
+      console.log('[Lembrete ZAPI] Credenciais ZAPI não configuradas');
+      return false;
+    }
+
+    // Formatar telefone
+    const phone = formatarTelefoneInternacional(agendamento.cliente.telefone);
+
+    // Formatar data/hora do agendamento
+    const dataFormatada = new Date(agendamento.data).toLocaleDateString('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+    });
+    const horaFormatada = new Date(agendamento.hora_inicio).toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'America/Sao_Paulo',
+    });
+
+    // Montar mensagem de lembrete
+    const mensagem = `🔔 *Lembrete de Agendamento*\n\n` +
+      `Olá, ${agendamento.cliente.nome}!\n\n` +
+      `Você tem um agendamento *hoje*:\n\n` +
+      `📅 Data: ${dataFormatada}\n` +
+      `🕐 Horário: ${horaFormatada}\n` +
+      `💇 Serviço: ${agendamento.servico.nome}\n` +
+      `👤 Profissional: ${agendamento.profissional.nome}\n\n` +
+      `📍 ${salao.nome}\n\n` +
+      `Nos vemos em breve! 😊`;
+
+    let url = '';
+    let payload: any = {};
+
+    // Verificar tipo de envio (texto ou documento)
+    if (salao.zapi_tipo_envio === 'documento' && salao.zapi_documento_url) {
+      // Enviar com documento
+      url = `https://api.z-api.io/instances/${salao.zapi_instance_id}/token/${salao.zapi_token}/send-document/${phone}`;
+      payload = {
+        phone: phone,
+        document: salao.zapi_documento_url,
+        fileName: salao.zapi_documento_nome || 'lembrete-agendamento.pdf',
+        extension: salao.zapi_documento_extensao || '.pdf',
+        caption: salao.zapi_documento_descricao || mensagem,
+      };
+    } else {
+      // Enviar texto simples
+      url = `https://api.z-api.io/instances/${salao.zapi_instance_id}/token/${salao.zapi_token}/send-text`;
+      payload = {
+        phone: phone,
+        message: mensagem,
+      };
+    }
+
+    console.log('[Lembrete ZAPI] Enviando lembrete para:', phone);
+    console.log('[Lembrete ZAPI] URL:', url);
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Client-Token': salao.zapi_token,
+      },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(10000),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error('[Lembrete ZAPI] Erro na resposta:', result);
+      return false;
+    }
+
+    console.log('[Lembrete ZAPI] Lembrete enviado com sucesso!');
+    return true;
+  } catch (error: any) {
+    console.error('[Lembrete ZAPI] Erro ao enviar lembrete:', error);
+    return false;
+  }
+}
