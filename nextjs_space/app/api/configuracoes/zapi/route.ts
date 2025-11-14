@@ -70,18 +70,14 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
-
-      // Construir webhook_url automaticamente
-      const webhookUrl = `https://api.z-api.io/instances/${data.zapi_instance_id}/token/${data.zapi_token}/send-text`;
-      data.webhook_url = webhookUrl;
     }
 
     // Atualizar no banco
+    // NOTA: webhook_url agora é montado dinamicamente no webhook-utils.ts baseado no tipo de envio
     const updated = await prisma.salao.update({
       where: { id: user.salao.id },
       data: {
         automacao_ativa: data.automacao_ativa ?? false,
-        webhook_url: data.webhook_url,
         zapi_instance_id: data.zapi_instance_id,
         zapi_token: data.zapi_token,
         zapi_tipo_envio: data.zapi_tipo_envio || 'texto',

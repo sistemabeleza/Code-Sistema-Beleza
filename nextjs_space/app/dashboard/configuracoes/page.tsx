@@ -197,14 +197,9 @@ export default function ConfiguracoesPage() {
       setSalvando(true)
       
       // Construir a webhook_url no formato correto da ZAPI
-      const endpoint = zapiConfig.zapi_tipo_envio === 'documento' ? 'send-document' : 'send-text'
-      const webhook_url = zapiConfig.automacao_ativa && zapiConfig.zapi_instancia && zapiConfig.zapi_token
-        ? `https://api.z-api.io/instances/${zapiConfig.zapi_instancia}/token/${zapiConfig.zapi_token}/${endpoint}`
-        : null
-
+      // Payload para API (webhook_url agora é montado dinamicamente no backend)
       const payload = {
         automacao_ativa: zapiConfig.automacao_ativa,
-        webhook_url: webhook_url,
         zapi_instance_id: zapiConfig.zapi_instancia,
         zapi_token: zapiConfig.zapi_token,
         zapi_tipo_envio: zapiConfig.zapi_tipo_envio,

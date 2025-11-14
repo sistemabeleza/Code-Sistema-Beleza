@@ -97,16 +97,12 @@ function validarWebhookConfig(salao: Salao): boolean {
     return false
   }
 
-  if (!salao.webhook_url || salao.webhook_url.trim() === '') {
-    console.log(`[Webhook] URL não configurada para o salão ${salao.nome} (${salao.id})`)
-    return false
-  }
+  // Verificar credenciais ZAPI
+  const instanceId = (salao as any).zapi_instance_id
+  const token = (salao as any).zapi_token
 
-  // Validação básica de URL
-  try {
-    new URL(salao.webhook_url)
-  } catch (error) {
-    console.error(`[Webhook] URL inválida para o salão ${salao.nome}:`, salao.webhook_url)
+  if (!instanceId || !token) {
+    console.log(`[Webhook] Credenciais ZAPI não configuradas para o salão ${salao.nome} (${salao.id})`)
     return false
   }
 
@@ -300,20 +296,37 @@ function formatarPayloadWebhook(
 }
 
 /**
- * Envia o webhook para a URL configurada (formato ZAPI/Fiqon)
+ * Envia mensagem via ZAPI (formato correto para Fiqon)
  * 
  * Esta função implementa:
  * - Timeout de 10 segundos (WhatsApp pode demorar mais)
  * - Retry de 1 tentativa em caso de falha
  * - Captura total de erros (nunca propaga exceções)
  * - Logs detalhados para auditoria
+ * - Montagem correta da URL baseada no tipo de envio
  */
-async function enviarWebhook(url: string, payload: ZAPIPayload | ZAPIPayloadComDocumento): Promise<boolean> {
+async function enviarWebhook(
+  instanceId: string, 
+  token: string, 
+  payload: ZAPIPayload | ZAPIPayloadComDocumento,
+  tipoEnvio: 'texto' | 'documento'
+): Promise<boolean> {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 segundos
 
   try {
+    // Montar URL correta baseada no tipo de envio
+    let url = ''
+    if (tipoEnvio === 'documento') {
+      // Para documento, incluir o telefone na URL
+      url = `https://api.z-api.io/instances/${instanceId}/token/${token}/send-document/${payload.phone}`
+    } else {
+      // Para texto, URL simples
+      url = `https://api.z-api.io/instances/${instanceId}/token/${token}/send-text`
+    }
+
     console.log(`[Webhook ZAPI] Enviando mensagem WhatsApp para ${payload.phone}`)
+    console.log(`[Webhook ZAPI] Tipo de envio: ${tipoEnvio}`)
     console.log(`[Webhook ZAPI] URL:`, url)
     console.log(`[Webhook ZAPI] Payload:`, JSON.stringify(payload, null, 2))
 
@@ -321,7 +334,7 @@ async function enviarWebhook(url: string, payload: ZAPIPayload | ZAPIPayloadComD
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'User-Agent': 'Sistema-Beleza-Webhook/1.0'
+        'Client-Token': token
       },
       body: JSON.stringify(payload),
       signal: controller.signal
@@ -403,6 +416,15 @@ export async function enviarWebhookAgendamento(
 
     console.log('[Webhook ZAPI] Iniciando envio de notificação WhatsApp...')
 
+    // Verificar credenciais ZAPI
+    const instanceId = (salaoData as any).zapi_instance_id
+    const token = (salaoData as any).zapi_token
+
+    if (!instanceId || !token) {
+      console.error('[Webhook ZAPI] ✗ Credenciais ZAPI não configuradas (instance_id ou token ausente)')
+      return
+    }
+
     // Obter configurações da ZAPI
     const tipoEnvio = (salaoData as any).zapi_tipo_envio || 'texto'
     const delay = (salaoData as any).zapi_delay || 2
@@ -435,13 +457,13 @@ export async function enviarWebhookAgendamento(
     }
 
     // Enviar webhook (com retry automático)
-    const sucesso = await enviarWebhook(salaoData.webhook_url!, payload)
+    const sucesso = await enviarWebhook(instanceId, token, payload, tipoEnvio as 'texto' | 'documento')
 
     // Se falhou, tentar uma vez mais após o delay configurado
     if (!sucesso) {
       console.log(`[Webhook ZAPI] Tentando reenvio em ${delay} segundos...`)
       await new Promise(resolve => setTimeout(resolve, delay * 1000))
-      await enviarWebhook(salaoData.webhook_url!, payload)
+      await enviarWebhook(instanceId, token, payload, tipoEnvio as 'texto' | 'documento')
     }
   } catch (error) {
     // Captura absoluta de qualquer erro - NUNCA propagar para o fluxo principal
@@ -453,7 +475,7 @@ export async function enviarWebhookAgendamento(
  * Utilitário para testar webhook sem criar agendamento real (formato ZAPI/Fiqon)
  * Útil para validação da configuração
  */
-export async function testarWebhook(salao: Salao): Promise<{ sucesso: boolean; mensagem: string }> {
+export async function testarWebhook(salao: Salao, telefoneTesteBR?: string): Promise<{ sucesso: boolean; mensagem: string }> {
   try {
     if (!validarWebhookConfig(salao)) {
       return {
@@ -462,9 +484,23 @@ export async function testarWebhook(salao: Salao): Promise<{ sucesso: boolean; m
       }
     }
 
+    // Verificar credenciais
+    const instanceId = (salao as any).zapi_instance_id
+    const token = (salao as any).zapi_token
+
+    if (!instanceId || !token) {
+      return {
+        sucesso: false,
+        mensagem: 'Credenciais ZAPI não configuradas (instance_id ou token ausente)'
+      }
+    }
+
+    // Usar telefone de teste ou número padrão
+    const telefoneTeste = telefoneTesteBR || '+5511999999999'
+
     // Criar payload de teste no formato ZAPI
     const payloadTeste: ZAPIPayload = {
-      phone: '+5511999999999',
+      phone: formatarTelefoneInternacional(telefoneTeste),
       message: `🧪 *Teste de Webhook - ${salao.nome}*\n\n` +
         `Este é um teste de integração WhatsApp.\n\n` +
         `✅ Sua configuração está funcionando corretamente!\n\n` +
@@ -476,13 +512,13 @@ export async function testarWebhook(salao: Salao): Promise<{ sucesso: boolean; m
 
     console.log('[Webhook ZAPI] Enviando mensagem de teste...')
 
-    const sucesso = await enviarWebhook(salao.webhook_url!, payloadTeste)
+    const sucesso = await enviarWebhook(instanceId, token, payloadTeste, 'texto')
 
     return {
       sucesso,
       mensagem: sucesso 
         ? '✓ Webhook ZAPI enviado com sucesso! Verifique o WhatsApp.' 
-        : '✗ Falha ao enviar webhook. Verifique a URL da ZAPI e tente novamente.'
+        : '✗ Falha ao enviar webhook. Verifique as credenciais ZAPI e tente novamente.'
     }
   } catch (error: any) {
     return {
