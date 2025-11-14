@@ -117,11 +117,13 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Enviar webhook de automação (se configurado)
+    // Enviar webhook Fiqon (se configurado)
     // Não aguarda conclusão para não atrasar a resposta ao usuário
-    enviarWebhookAgendamento('agendamento.criado', agendamento).catch(err => {
-      console.error('[API] Erro ao enviar webhook (ignorado):', err)
-    })
+    if (agendamento.salao) {
+      enviarWebhookAgendamento(agendamento, agendamento.salao, 'agendamento_criado').catch(err => {
+        console.error('[API] Erro ao enviar webhook (ignorado):', err)
+      })
+    }
 
     return NextResponse.json({
       success: true,

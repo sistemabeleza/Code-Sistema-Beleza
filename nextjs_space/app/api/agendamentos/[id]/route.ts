@@ -52,10 +52,12 @@ export async function PATCH(
       }
     })
 
-    // Enviar webhook de automação (se configurado)
-    enviarWebhookAgendamento('agendamento.atualizado', agendamentoAtualizado).catch(err => {
-      console.error('[API] Erro ao enviar webhook (ignorado):', err)
-    })
+    // Enviar webhook Fiqon (se configurado)
+    if (agendamentoAtualizado.salao) {
+      enviarWebhookAgendamento(agendamentoAtualizado, agendamentoAtualizado.salao, 'agendamento_atualizado').catch(err => {
+        console.error('[API] Erro ao enviar webhook (ignorado):', err)
+      })
+    }
 
     // Se o status mudou para REALIZADO, registrar automaticamente como receita
     if (body.status === 'REALIZADO' && agendamento.status !== 'REALIZADO') {
@@ -130,10 +132,12 @@ export async function DELETE(
       where: { id }
     })
 
-    // Enviar webhook de automação (se configurado)
-    enviarWebhookAgendamento('agendamento.cancelado', agendamento).catch(err => {
-      console.error('[API] Erro ao enviar webhook (ignorado):', err)
-    })
+    // Enviar webhook Fiqon (se configurado)
+    if (agendamento.salao) {
+      enviarWebhookAgendamento(agendamento, agendamento.salao, 'agendamento_cancelado').catch(err => {
+        console.error('[API] Erro ao enviar webhook (ignorado):', err)
+      })
+    }
 
     return NextResponse.json({
       success: true,

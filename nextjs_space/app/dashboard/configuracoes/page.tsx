@@ -30,22 +30,10 @@ export default function ConfiguracoesPage() {
     timezone: 'America/Sao_Paulo'
   })
 
-  // Estado para configurações ZAPI
-  const [zapiConfig, setZapiConfig] = useState({
+  // Estado para webhook Fiqon (simples)
+  const [webhookConfig, setWebhookConfig] = useState({
     automacao_ativa: false,
-    zapi_instancia: '',
-    zapi_token: '',
-    zapi_tipo_envio: 'texto',
-    zapi_delay: 2,
-    zapi_enviar_confirmacao: true,
-    zapi_enviar_atualizacao: true,
-    zapi_enviar_cancelamento: true,
-    zapi_enviar_lembretes: false,
-    zapi_horario_lembrete: '09:00',
-    zapi_documento_url: '',
-    zapi_documento_nome: '',
-    zapi_documento_extensao: '.pdf',
-    zapi_documento_descricao: ''
+    webhook_fiqon: ''
   })
   const [testando, setTestando] = useState(false)
 
@@ -73,33 +61,10 @@ export default function ConfiguracoesPage() {
           timezone: data.timezone || 'America/Sao_Paulo'
         })
         
-        // Carregar configurações ZAPI
-        // Extrair instância e token da webhook_url se existir
-        let instancia = ''
-        let token = ''
-        if (data.webhook_url && data.webhook_url.includes('z-api.io')) {
-          const match = data.webhook_url.match(/instances\/([^/]+)\/token\/([^/]+)/)
-          if (match) {
-            instancia = match[1]
-            token = match[2]
-          }
-        }
-        
-        setZapiConfig({
+        // Carregar configurações webhook Fiqon
+        setWebhookConfig({
           automacao_ativa: data.automacao_ativa || false,
-          zapi_instancia: data.zapi_instance_id || instancia,
-          zapi_token: data.zapi_token || token,
-          zapi_tipo_envio: data.zapi_tipo_envio || 'texto',
-          zapi_delay: data.zapi_delay || 2,
-          zapi_enviar_confirmacao: data.zapi_enviar_confirmacao !== false,
-          zapi_enviar_atualizacao: data.zapi_enviar_atualizacao !== false,
-          zapi_enviar_cancelamento: data.zapi_enviar_cancelamento !== false,
-          zapi_enviar_lembretes: data.zapi_enviar_lembretes || false,
-          zapi_horario_lembrete: data.zapi_horario_lembrete || '09:00',
-          zapi_documento_url: data.zapi_documento_url || '',
-          zapi_documento_nome: data.zapi_documento_nome || '',
-          zapi_documento_extensao: data.zapi_documento_extensao || '.pdf',
-          zapi_documento_descricao: data.zapi_documento_descricao || ''
+          webhook_fiqon: data.webhook_fiqon || ''
         })
         
         // Armazenar informações de assinatura
@@ -174,102 +139,66 @@ export default function ConfiguracoesPage() {
     toast.success('Link copiado!')
   }
 
-  async function salvarZapi() {
+  async function salvarWebhook() {
     // Validações
-    if (zapiConfig.automacao_ativa) {
-      if (!zapiConfig.zapi_instancia || zapiConfig.zapi_instancia.trim() === '') {
-        toast.error('Informe a Instância da ZAPI')
-        return
-      }
-      if (!zapiConfig.zapi_token || zapiConfig.zapi_token.trim() === '') {
-        toast.error('Informe o Token da ZAPI')
-        return
-      }
-      
-      // Se for envio com documento, validar URL do documento
-      if (zapiConfig.zapi_tipo_envio === 'documento' && (!zapiConfig.zapi_documento_url || zapiConfig.zapi_documento_url.trim() === '')) {
-        toast.error('Informe a URL do documento para envio')
-        return
-      }
+    if (webhookConfig.automacao_ativa && (!webhookConfig.webhook_fiqon || webhookConfig.webhook_fiqon.trim() === '')) {
+      toast.error('Informe a URL do webhook da Fiqon')
+      return
     }
 
     try {
       setSalvando(true)
       
-      // Construir a webhook_url no formato correto da ZAPI
-      // Payload para API (webhook_url agora é montado dinamicamente no backend)
-      const payload = {
-        automacao_ativa: zapiConfig.automacao_ativa,
-        zapi_instance_id: zapiConfig.zapi_instancia,
-        zapi_token: zapiConfig.zapi_token,
-        zapi_tipo_envio: zapiConfig.zapi_tipo_envio,
-        zapi_delay: zapiConfig.zapi_delay,
-        zapi_enviar_confirmacao: zapiConfig.zapi_enviar_confirmacao,
-        zapi_enviar_atualizacao: zapiConfig.zapi_enviar_atualizacao,
-        zapi_enviar_cancelamento: zapiConfig.zapi_enviar_cancelamento,
-        zapi_enviar_lembretes: zapiConfig.zapi_enviar_lembretes,
-        zapi_horario_lembrete: zapiConfig.zapi_horario_lembrete,
-        zapi_documento_url: zapiConfig.zapi_documento_url,
-        zapi_documento_nome: zapiConfig.zapi_documento_nome,
-        zapi_documento_extensao: zapiConfig.zapi_documento_extensao,
-        zapi_documento_descricao: zapiConfig.zapi_documento_descricao
-      }
-
-      const res = await fetch('/api/configuracoes/zapi', {
+      const res = await fetch('/api/configuracoes/webhook', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          automacao_ativa: webhookConfig.automacao_ativa,
+          webhook_fiqon: webhookConfig.webhook_fiqon
+        })
       })
 
       if (res.ok) {
-        toast.success('Configurações ZAPI salvas com sucesso!')
+        toast.success('Configurações salvas com sucesso!')
       } else {
         const error = await res.json()
-        toast.error(error.error || 'Erro ao salvar configurações ZAPI')
+        toast.error(error.error || 'Erro ao salvar configurações')
       }
     } catch (error) {
-      console.error('Erro ao salvar ZAPI:', error)
-      toast.error('Erro ao salvar configurações ZAPI')
+      console.error('Erro ao salvar webhook:', error)
+      toast.error('Erro ao salvar configurações')
     } finally {
       setSalvando(false)
     }
   }
 
-  async function testarZapi() {
-    if (!zapiConfig.zapi_instancia || !zapiConfig.zapi_token) {
-      toast.error('Preencha a Instância e o Token antes de testar')
+  async function testarWebhook() {
+    if (!webhookConfig.webhook_fiqon || webhookConfig.webhook_fiqon.trim() === '') {
+      toast.error('Preencha a URL do webhook antes de testar')
       return
     }
 
     try {
       setTestando(true)
       
-      // Primeiro salvar as configurações
-      await salvarZapi()
-      
-      // Depois testar
-      const res = await fetch('/api/configuracoes/zapi/testar', {
+      const res = await fetch('/api/configuracoes/webhook/testar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          instance_id: zapiConfig.zapi_instancia,
-          token: zapiConfig.zapi_token,
-          tipo_envio: zapiConfig.zapi_tipo_envio,
-          documento_url: zapiConfig.zapi_documento_url,
-          phone: '5511999999999' // Telefone de teste
+          webhook_fiqon: webhookConfig.webhook_fiqon
         })
       })
 
       const data = await res.json()
 
-      if (data.success) {
-        toast.success(data.message || 'Teste enviado com sucesso! Verifique o WhatsApp.')
+      if (data.sucesso) {
+        toast.success(data.mensagem || 'Teste enviado com sucesso!')
       } else {
-        toast.error(data.error || 'Erro ao testar webhook')
+        toast.error(data.mensagem || 'Erro ao testar webhook')
       }
     } catch (error) {
-      console.error('Erro ao testar ZAPI:', error)
-      toast.error('Erro ao testar conexão com ZAPI')
+      console.error('Erro ao testar webhook:', error)
+      toast.error('Erro ao testar webhook')
     } finally {
       setTestando(false)
     }
@@ -501,15 +430,15 @@ export default function ConfiguracoesPage() {
           </CardContent>
         </Card>
 
-        {/* Automação WhatsApp - ZAPI */}
+        {/* Automação WhatsApp - Fiqon + ZAPI */}
         <Card className="border-green-200 bg-gradient-to-br from-green-50 to-emerald-50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Send className="h-5 w-5 text-green-600" />
-              Automação WhatsApp (ZAPI)
+              Automação WhatsApp (Fiqon + ZAPI)
             </CardTitle>
             <CardDescription>
-              Configure o envio automático de mensagens via WhatsApp para seus clientes
+              Configure o envio automático de mensagens via Fiqon/ZAPI para seus clientes
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -520,282 +449,73 @@ export default function ConfiguracoesPage() {
                   Ativar Automação WhatsApp
                 </Label>
                 <p className="text-sm text-muted-foreground">
-                  Envie mensagens automáticas quando houver novos agendamentos
+                  Envie mensagens automáticas para agendamentos, confirmações e lembretes
                 </p>
               </div>
               <Switch
                 id="automacao-toggle"
-                checked={zapiConfig.automacao_ativa}
-                onCheckedChange={(checked) => setZapiConfig(prev => ({ ...prev, automacao_ativa: checked }))}
+                checked={webhookConfig.automacao_ativa}
+                onCheckedChange={(checked) => setWebhookConfig(prev => ({ ...prev, automacao_ativa: checked }))}
               />
             </div>
 
-            {zapiConfig.automacao_ativa && (
+            {webhookConfig.automacao_ativa && (
               <>
-                {/* Credenciais ZAPI */}
+                {/* Webhook Fiqon */}
                 <div className="space-y-4 p-4 bg-white rounded-lg border border-green-200">
                   <h3 className="font-medium text-sm flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    Credenciais da ZAPI
+                    <Zap className="h-4 w-4 text-green-600" />
+                    Webhook da Fiqon
                   </h3>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="zapi-instancia">Instância ZAPI *</Label>
+                    <Label htmlFor="webhook-fiqon">URL do Webhook *</Label>
                     <Input
-                      id="zapi-instancia"
-                      value={zapiConfig.zapi_instancia}
-                      onChange={(e) => setZapiConfig(prev => ({ ...prev, zapi_instancia: e.target.value }))}
-                      placeholder="Ex: 3BA2DA29C1B66"
+                      id="webhook-fiqon"
+                      value={webhookConfig.webhook_fiqon}
+                      onChange={(e) => setWebhookConfig(prev => ({ ...prev, webhook_fiqon: e.target.value }))}
+                      placeholder="https://app.fiqon.com.br/webhook/seu-id"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Encontre sua instância no painel da ZAPI (ID da instância)
+                      Cole aqui a URL do webhook que você criou no painel da Fiqon
                     </p>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="zapi-token">Token ZAPI *</Label>
-                    <Input
-                      id="zapi-token"
-                      value={zapiConfig.zapi_token}
-                      onChange={(e) => setZapiConfig(prev => ({ ...prev, zapi_token: e.target.value }))}
-                      placeholder="Ex: F176a0a87a57d4bfa9a36354435766896S"
-                      type="password"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Token de autenticação da sua instância ZAPI
-                    </p>
-                  </div>
-
-                  {/* URL Gerada */}
-                  {zapiConfig.zapi_instancia && zapiConfig.zapi_token && (
-                    <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-                      <p className="text-xs font-medium text-green-800 mb-1">URL Webhook Gerada:</p>
-                      <code className="text-xs text-green-700 break-all">
-                        https://api.z-api.io/instances/{zapiConfig.zapi_instancia}/token/{zapiConfig.zapi_token}/send-text
-                      </code>
-                    </div>
-                  )}
                 </div>
-
-                {/* Tipo de Envio */}
-                <div className="space-y-4 p-4 bg-white rounded-lg border border-green-200">
-                  <h3 className="font-medium text-sm flex items-center gap-2">
-                    <MessageCircle className="h-4 w-4 text-green-600" />
-                    Configurações de Mensagem
-                  </h3>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="tipo-envio">Tipo de Envio</Label>
-                    <Select 
-                      value={zapiConfig.zapi_tipo_envio} 
-                      onValueChange={(value) => setZapiConfig(prev => ({ ...prev, zapi_tipo_envio: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="texto">Apenas Texto</SelectItem>
-                        <SelectItem value="documento">Texto + Documento (PDF, etc)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="zapi-delay">Atraso de Envio (segundos)</Label>
-                    <Input
-                      id="zapi-delay"
-                      type="number"
-                      min="1"
-                      max="15"
-                      value={zapiConfig.zapi_delay}
-                      onChange={(e) => setZapiConfig(prev => ({ ...prev, zapi_delay: parseInt(e.target.value) || 2 }))}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Tempo de espera antes de enviar a mensagem (1-15 segundos)
-                    </p>
-                  </div>
-
-                  {/* Opções de Notificação */}
-                  <div className="space-y-3">
-                    <Label>Enviar notificações para:</Label>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="enviar-confirmacao"
-                        checked={zapiConfig.zapi_enviar_confirmacao}
-                        onCheckedChange={(checked) => setZapiConfig(prev => ({ ...prev, zapi_enviar_confirmacao: checked as boolean }))}
-                      />
-                      <label
-                        htmlFor="enviar-confirmacao"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        Novos agendamentos (confirmação)
-                      </label>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="enviar-atualizacao"
-                        checked={zapiConfig.zapi_enviar_atualizacao}
-                        onCheckedChange={(checked) => setZapiConfig(prev => ({ ...prev, zapi_enviar_atualizacao: checked as boolean }))}
-                      />
-                      <label
-                        htmlFor="enviar-atualizacao"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        Atualizações de agendamento
-                      </label>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="enviar-cancelamento"
-                        checked={zapiConfig.zapi_enviar_cancelamento}
-                        onCheckedChange={(checked) => setZapiConfig(prev => ({ ...prev, zapi_enviar_cancelamento: checked as boolean }))}
-                      />
-                      <label
-                        htmlFor="enviar-cancelamento"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        Cancelamentos de agendamento
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Lembretes Automáticos */}
-                <div className="space-y-4 p-4 bg-white rounded-lg border border-green-200">
-                  <h3 className="font-medium text-sm flex items-center gap-2">
-                    <Bell className="h-4 w-4 text-green-600" />
-                    Lembretes Automáticos do Dia
-                  </h3>
-
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="enviar-lembretes"
-                      checked={zapiConfig.zapi_enviar_lembretes}
-                      onCheckedChange={(checked) => setZapiConfig(prev => ({ ...prev, zapi_enviar_lembretes: checked as boolean }))}
-                    />
-                    <label
-                      htmlFor="enviar-lembretes"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      Enviar lembretes automáticos dos agendamentos do dia
-                    </label>
-                  </div>
-
-                  {zapiConfig.zapi_enviar_lembretes && (
-                    <div className="space-y-2 ml-6">
-                      <Label htmlFor="horario-lembrete">Horário de Envio</Label>
-                      <Input
-                        id="horario-lembrete"
-                        type="time"
-                        value={zapiConfig.zapi_horario_lembrete}
-                        onChange={(e) => setZapiConfig(prev => ({ ...prev, zapi_horario_lembrete: e.target.value }))}
-                        className="w-40"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        📅 Os lembretes serão enviados automaticamente neste horário para todos os agendamentos do dia
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Configurações de Documento (se tipo_envio = documento) */}
-                {zapiConfig.zapi_tipo_envio === 'documento' && (
-                  <div className="space-y-4 p-4 bg-white rounded-lg border border-green-200">
-                    <h3 className="font-medium text-sm flex items-center gap-2">
-                      <ExternalLink className="h-4 w-4 text-green-600" />
-                      Configurações do Documento
-                    </h3>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="doc-url">URL do Documento *</Label>
-                      <Input
-                        id="doc-url"
-                        value={zapiConfig.zapi_documento_url}
-                        onChange={(e) => setZapiConfig(prev => ({ ...prev, zapi_documento_url: e.target.value }))}
-                        placeholder="https://exemplo.com/documento.pdf"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        URL pública do documento a ser enviado junto com a mensagem
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="doc-nome">Nome do Arquivo</Label>
-                        <Input
-                          id="doc-nome"
-                          value={zapiConfig.zapi_documento_nome}
-                          onChange={(e) => setZapiConfig(prev => ({ ...prev, zapi_documento_nome: e.target.value }))}
-                          placeholder="Comprovante"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="doc-extensao">Extensão</Label>
-                        <Select 
-                          value={zapiConfig.zapi_documento_extensao} 
-                          onValueChange={(value) => setZapiConfig(prev => ({ ...prev, zapi_documento_extensao: value }))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value=".pdf">.pdf</SelectItem>
-                            <SelectItem value=".docx">.docx</SelectItem>
-                            <SelectItem value=".jpg">.jpg</SelectItem>
-                            <SelectItem value=".png">.png</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="doc-descricao">Descrição/Caption</Label>
-                      <Textarea
-                        id="doc-descricao"
-                        value={zapiConfig.zapi_documento_descricao}
-                        onChange={(e) => setZapiConfig(prev => ({ ...prev, zapi_documento_descricao: e.target.value }))}
-                        placeholder="Descrição do documento..."
-                        rows={2}
-                      />
-                    </div>
-                  </div>
-                )}
 
                 {/* Botões de Ação */}
                 <div className="flex gap-3">
                   <Button 
-                    onClick={salvarZapi} 
+                    onClick={salvarWebhook} 
                     disabled={salvando}
                     className="bg-green-600 hover:bg-green-700"
                   >
-                    {salvando ? 'Salvando...' : 'Salvar Configurações ZAPI'}
+                    {salvando ? 'Salvando...' : 'Salvar Configurações'}
                   </Button>
                   
                   <Button 
-                    onClick={testarZapi} 
-                    disabled={testando || !zapiConfig.zapi_instancia || !zapiConfig.zapi_token}
+                    onClick={testarWebhook} 
+                    disabled={testando || !webhookConfig.webhook_fiqon}
                     variant="outline"
                     className="border-green-600 text-green-600 hover:bg-green-50"
                   >
-                    {testando ? 'Testando...' : 'Testar Conexão'}
+                    {testando ? 'Testando...' : 'Testar Webhook'}
                   </Button>
                 </div>
 
                 {/* Aviso */}
                 <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
                   <p className="text-sm text-blue-800">
-                    💡 <strong>Como obter suas credenciais ZAPI:</strong>
+                    💡 <strong>Como funciona:</strong>
                   </p>
                   <ol className="mt-2 text-xs text-blue-700 space-y-1 list-decimal list-inside">
-                    <li>Acesse o painel da ZAPI (https://api.z-api.io)</li>
-                    <li>Vá em "Instâncias" e selecione sua instância</li>
-                    <li>Copie o ID da Instância e o Token</li>
-                    <li>Cole aqui nos campos acima e clique em "Salvar"</li>
+                    <li>Cliente agenda → Sistema envia dados para Fiqon → Fiqon envia para ZAPI → Cliente recebe mensagem</li>
+                    <li>Configure o webhook na Fiqon e cole a URL aqui</li>
+                    <li>A Fiqon cuidará de enviar as mensagens via ZAPI</li>
+                    <li>As credenciais da ZAPI ficam apenas na Fiqon</li>
                   </ol>
+                  <p className="mt-2 text-xs text-blue-700">
+                    <strong>Eventos enviados:</strong> Agendamento criado, atualizado, cancelado e lembretes diários
+                  </p>
                 </div>
               </>
             )}
