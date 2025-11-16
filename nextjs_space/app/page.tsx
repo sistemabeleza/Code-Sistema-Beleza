@@ -297,8 +297,8 @@ export default function HomePage() {
             <div className="relative mt-12">
               <div className="relative w-full max-w-4xl mx-auto aspect-video bg-gray-100 rounded-2xl shadow-2xl overflow-hidden">
                 <Image
-                  src="/landing/dashboard-real-sistema.jpeg"
-                  alt="Dashboard real do Sistema Beleza - Barbearia do Naldo em funcionamento"
+                  src="/landing/dashboard-limpo-sistema.png"
+                  alt="Dashboard completo do Sistema Beleza com menu lateral e controles"
                   fill
                   className="object-cover"
                   priority
@@ -410,11 +410,11 @@ export default function HomePage() {
             <div className="mb-12">
               <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-xl">
                 <div className="grid lg:grid-cols-2 gap-8 items-center">
-                  {/* Dashboard Limpo do Sistema */}
+                  {/* Imagem da pessoa usando */}
                   <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-gray-100">
                     <Image
-                      src="/landing/dashboard-limpo-sistema.png"
-                      alt="Dashboard completo do Sistema Beleza com menu lateral e controles"
+                      src="/landing/salon-professional-using-system.png"
+                      alt="Profissional de salão usando o Sistema Beleza no computador"
                       fill
                       className="object-cover"
                     />
@@ -446,18 +446,18 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {/* Dashboard Screenshot Real - Destaque */}
+                {/* Dashboard Screenshot Real - Abaixo da Mulher */}
                 <div className="mt-8 pt-8 border-t border-gray-200">
                   <div className="relative aspect-video rounded-xl overflow-hidden shadow-lg bg-gray-100">
                     <Image
-                      src="/landing/dashboard-real-sistema.jpeg"
-                      alt="Dashboard real da Barbearia do Naldo - Próximos agendamentos e serviços mais vendidos"
+                      src="/landing/pagina-agendamento-publico.jpeg"
+                      alt="Página de agendamento público do Sistema Beleza - Escolha de serviços com preços e duração"
                       fill
                       className="object-cover"
                     />
                   </div>
                   <p className="text-center text-sm text-gray-500 mt-4">
-                    Interface real do sistema em uso - Agenda, serviços mais vendidos e controles completos
+                    Seu salão ganha uma página profissional para agendamentos online 24h por dia
                   </p>
                 </div>
               </div>
