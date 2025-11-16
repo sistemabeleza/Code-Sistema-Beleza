@@ -293,12 +293,12 @@ export default function HomePage() {
               </a>
             </div>
 
-            {/* Mockup/Print do Sistema */}
+            {/* Screenshot Real do Sistema */}
             <div className="relative mt-12">
               <div className="relative w-full max-w-4xl mx-auto aspect-video bg-gray-100 rounded-2xl shadow-2xl overflow-hidden">
                 <Image
-                  src="/landing/dashboard-mockup.png"
-                  alt="Interface do Sistema Beleza - Dashboard completo com agenda, métricas e controles"
+                  src="/landing/dashboard-real-sistema.jpeg"
+                  alt="Dashboard real do Sistema Beleza - Barbearia do Naldo em funcionamento"
                   fill
                   className="object-cover"
                   priority
@@ -446,59 +446,59 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {/* Dashboard Screenshot - Destaque */}
+                {/* Dashboard Screenshot Real - Destaque */}
                 <div className="mt-8 pt-8 border-t border-gray-200">
                   <div className="relative aspect-video rounded-xl overflow-hidden shadow-lg bg-gray-100">
                     <Image
-                      src="/landing/dashboard-mockup.png"
-                      alt="Dashboard do Sistema Beleza - Agenda, financeiro, estoque e relatórios"
+                      src="/landing/dashboard-real-sistema.jpeg"
+                      alt="Dashboard real da Barbearia do Naldo - Próximos agendamentos e serviços mais vendidos"
                       fill
                       className="object-cover"
                     />
                   </div>
                   <p className="text-center text-sm text-gray-500 mt-4">
-                    Dashboard completo com agenda, financeiro, estoque, comissões e muito mais
+                    Interface real do sistema em uso - Agenda, serviços mais vendidos e controles completos
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Cards de Recursos Visuais */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Card 1 - Agenda */}
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-                  <Calendar className="w-6 h-6 text-[#0099FF]" />
+            {/* Screenshots Reais do Sistema */}
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Card 1 - Menu Lateral */}
+              <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+                <div className="relative aspect-[3/4] bg-gray-100">
+                  <Image
+                    src="/landing/menu-lateral-sistema.jpeg"
+                    alt="Menu lateral do Sistema Beleza - Dashboard, Agenda, Clientes, Profissionais, Serviços e mais"
+                    fill
+                    className="object-cover"
+                  />
                 </div>
-                <h4 className="font-bold text-[#333333] mb-2">Agenda Inteligente</h4>
-                <p className="text-sm text-gray-600">Visualize todos os horários em um só lugar</p>
+                <div className="p-4">
+                  <h4 className="font-bold text-[#333333] mb-2">Menu Completo</h4>
+                  <p className="text-sm text-gray-600">
+                    Navegação simples: Dashboard, Agenda, Clientes, Profissionais, Serviços, Produtos, Financeiro, Relatórios e Configurações
+                  </p>
+                </div>
               </div>
 
-              {/* Card 2 - Financeiro */}
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
-                  <DollarSign className="w-6 h-6 text-green-600" />
+              {/* Card 2 - Confirmação de Agendamento */}
+              <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+                <div className="relative aspect-[3/4] bg-gray-100">
+                  <Image
+                    src="/landing/confirmacao-agendamento.jpeg"
+                    alt="Confirmação de agendamento do Sistema Beleza - Serviço BARBA com profissional JULIO CESAR"
+                    fill
+                    className="object-cover"
+                  />
                 </div>
-                <h4 className="font-bold text-[#333333] mb-2">Controle Financeiro</h4>
-                <p className="text-sm text-gray-600">Receitas e despesas automáticas</p>
-              </div>
-
-              {/* Card 3 - Estoque */}
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
-                  <Package className="w-6 h-6 text-purple-600" />
+                <div className="p-4">
+                  <h4 className="font-bold text-[#333333] mb-2">Agendamento Confirmado</h4>
+                  <p className="text-sm text-gray-600">
+                    Página profissional de confirmação com todos os detalhes: serviço, profissional, data e horário. Cliente recebe confirmação automática.
+                  </p>
                 </div>
-                <h4 className="font-bold text-[#333333] mb-2">Gestão de Estoque</h4>
-                <p className="text-sm text-gray-600">Controle produtos e movimentações</p>
-              </div>
-
-              {/* Card 4 - Página Pública */}
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mb-4">
-                  <Globe className="w-6 h-6 text-pink-600" />
-                </div>
-                <h4 className="font-bold text-[#333333] mb-2">Página Profissional</h4>
-                <p className="text-sm text-gray-600">Site grátis para agendamentos</p>
               </div>
             </div>
           </div>
