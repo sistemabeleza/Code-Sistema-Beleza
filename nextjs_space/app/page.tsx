@@ -92,23 +92,44 @@ export default function HomePage() {
     {
       nome: 'Carla Mendes',
       negocio: 'Salão Glamour',
-      foto: 'C',
+      foto: '/landing/avatar-female-1.png',
       texto: 'Antes era tudo bagunçado no caderno. Agora tenho controle total e meus clientes adoram agendar pelo site!',
       metrica: '+ 1.200 agendamentos gerados'
     },
     {
       nome: 'Paulo Ricardo',
       negocio: 'Barbearia Premium',
-      foto: 'P',
+      foto: '/landing/avatar-male-2.png',
       texto: 'O sistema pagou-se em 1 semana. Economizo horas todo dia e não perco mais clientes por desorganização.',
       metrica: '4x mais produtividade'
     },
     {
       nome: 'Juliana Costa',
       negocio: 'Estética Bella Vita',
-      foto: 'J',
+      foto: '/landing/avatar-female-2.png',
       texto: 'Simples, rápido e completo. Comecei a usar em 10 minutos e nunca mais parei. Recomendo!',
       metrica: 'ROI positivo em 1 semana'
+    },
+    {
+      nome: 'Roberto Silva',
+      negocio: 'Studio Hair Design',
+      foto: '/landing/avatar-male-1.png',
+      texto: 'Minha equipe adora o sistema! As comissões ficam transparentes e o agendamento online trouxe muitos clientes novos.',
+      metrica: '+ 40% de novos clientes'
+    },
+    {
+      nome: 'Ana Paula Oliveira',
+      negocio: 'Espaço Beleza & Estilo',
+      foto: '/landing/avatar-female-3.png',
+      texto: 'Testei vários sistemas antes, mas nenhum era tão completo e fácil quanto este. Vale cada centavo!',
+      metrica: 'Recuperou investimento em 5 dias'
+    },
+    {
+      nome: 'Marcos Ferreira',
+      negocio: 'Barbearia do Marcos',
+      foto: '/landing/avatar-male-3.png',
+      texto: 'Impressionante como organizou minha rotina. Agora consigo focar no atendimento e não na papelada.',
+      metrica: '+ 3 horas livres por dia'
     }
   ]
 
@@ -275,13 +296,13 @@ export default function HomePage() {
             {/* Mockup/Print do Sistema */}
             <div className="relative mt-12">
               <div className="relative w-full max-w-4xl mx-auto aspect-video bg-gray-100 rounded-2xl shadow-2xl overflow-hidden">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center p-8">
-                    <Calendar className="w-16 h-16 text-[#0099FF] mx-auto mb-4" />
-                    <p className="text-gray-500 font-medium">Interface do Sistema Beleza</p>
-                    <p className="text-sm text-gray-400 mt-2">Agenda • Financeiro • Controle</p>
-                  </div>
-                </div>
+                <Image
+                  src="/landing/dashboard-mockup.png"
+                  alt="Interface do Sistema Beleza - Dashboard completo com agenda, métricas e controles"
+                  fill
+                  className="object-cover"
+                  priority
+                />
               </div>
             </div>
           </div>
@@ -385,45 +406,99 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-8">
-              {/* Print 1 - Agenda */}
-              <div className="bg-white p-4 rounded-2xl shadow-lg">
-                <div className="aspect-video bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg flex items-center justify-center">
-                  <div className="text-center p-6">
-                    <Calendar className="w-12 h-12 text-[#0099FF] mx-auto mb-3" />
-                    <p className="text-sm font-semibold text-gray-700">Agenda Inteligente</p>
+            {/* Profissional usando o sistema + Dashboard */}
+            <div className="mb-12">
+              <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-xl">
+                <div className="grid lg:grid-cols-2 gap-8 items-center">
+                  {/* Imagem da pessoa usando */}
+                  <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-gray-100">
+                    <Image
+                      src="/landing/salon-professional-using-system.png"
+                      alt="Profissional de salão usando o Sistema Beleza no computador"
+                      fill
+                      className="object-cover"
+                    />
                   </div>
+
+                  {/* Texto descritivo */}
+                  <div>
+                    <h3 className="text-2xl font-bold text-[#333333] mb-4">
+                      Gestão simplificada na palma da mão
+                    </h3>
+                    <p className="text-gray-600 leading-relaxed mb-6">
+                      Profissionais de todo o Brasil estão transformando seus salões com o Sistema Beleza. 
+                      Interface intuitiva que você aprende em minutos, não em semanas.
+                    </p>
+                    <ul className="space-y-3">
+                      <li className="flex items-start">
+                        <CheckCircle2 className="w-5 h-5 text-[#0099FF] mr-3 flex-shrink-0 mt-0.5" />
+                        <span className="text-gray-700">Acesse de qualquer lugar, a qualquer hora</span>
+                      </li>
+                      <li className="flex items-start">
+                        <CheckCircle2 className="w-5 h-5 text-[#0099FF] mr-3 flex-shrink-0 mt-0.5" />
+                        <span className="text-gray-700">Dashboard com métricas em tempo real</span>
+                      </li>
+                      <li className="flex items-start">
+                        <CheckCircle2 className="w-5 h-5 text-[#0099FF] mr-3 flex-shrink-0 mt-0.5" />
+                        <span className="text-gray-700">Suporte especializado sempre que precisar</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Dashboard Screenshot - Destaque */}
+                <div className="mt-8 pt-8 border-t border-gray-200">
+                  <div className="relative aspect-video rounded-xl overflow-hidden shadow-lg bg-gray-100">
+                    <Image
+                      src="/landing/dashboard-mockup.png"
+                      alt="Dashboard do Sistema Beleza - Agenda, financeiro, estoque e relatórios"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <p className="text-center text-sm text-gray-500 mt-4">
+                    Dashboard completo com agenda, financeiro, estoque, comissões e muito mais
+                  </p>
                 </div>
               </div>
+            </div>
 
-              {/* Print 2 - Financeiro */}
-              <div className="bg-white p-4 rounded-2xl shadow-lg">
-                <div className="aspect-video bg-gradient-to-br from-green-50 to-green-100 rounded-lg flex items-center justify-center">
-                  <div className="text-center p-6">
-                    <DollarSign className="w-12 h-12 text-green-600 mx-auto mb-3" />
-                    <p className="text-sm font-semibold text-gray-700">Controle Financeiro</p>
-                  </div>
+            {/* Cards de Recursos Visuais */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Card 1 - Agenda */}
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                  <Calendar className="w-6 h-6 text-[#0099FF]" />
                 </div>
+                <h4 className="font-bold text-[#333333] mb-2">Agenda Inteligente</h4>
+                <p className="text-sm text-gray-600">Visualize todos os horários em um só lugar</p>
               </div>
 
-              {/* Print 3 - Estoque */}
-              <div className="bg-white p-4 rounded-2xl shadow-lg">
-                <div className="aspect-video bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg flex items-center justify-center">
-                  <div className="text-center p-6">
-                    <Package className="w-12 h-12 text-purple-600 mx-auto mb-3" />
-                    <p className="text-sm font-semibold text-gray-700">Gestão de Estoque</p>
-                  </div>
+              {/* Card 2 - Financeiro */}
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+                  <DollarSign className="w-6 h-6 text-green-600" />
                 </div>
+                <h4 className="font-bold text-[#333333] mb-2">Controle Financeiro</h4>
+                <p className="text-sm text-gray-600">Receitas e despesas automáticas</p>
               </div>
 
-              {/* Print 4 - Página Pública */}
-              <div className="bg-white p-4 rounded-2xl shadow-lg">
-                <div className="aspect-video bg-gradient-to-br from-pink-50 to-pink-100 rounded-lg flex items-center justify-center">
-                  <div className="text-center p-6">
-                    <Globe className="w-12 h-12 text-pink-600 mx-auto mb-3" />
-                    <p className="text-sm font-semibold text-gray-700">Página Profissional</p>
-                  </div>
+              {/* Card 3 - Estoque */}
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+                  <Package className="w-6 h-6 text-purple-600" />
                 </div>
+                <h4 className="font-bold text-[#333333] mb-2">Gestão de Estoque</h4>
+                <p className="text-sm text-gray-600">Controle produtos e movimentações</p>
+              </div>
+
+              {/* Card 4 - Página Pública */}
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mb-4">
+                  <Globe className="w-6 h-6 text-pink-600" />
+                </div>
+                <h4 className="font-bold text-[#333333] mb-2">Página Profissional</h4>
+                <p className="text-sm text-gray-600">Site grátis para agendamentos</p>
               </div>
             </div>
           </div>
@@ -443,7 +518,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {depoimentos.map((depoimento, index) => (
                 <div
                   key={index}
@@ -463,8 +538,13 @@ export default function HomePage() {
 
                   {/* Autor */}
                   <div className="flex items-center mb-3">
-                    <div className="w-12 h-12 bg-[#0099FF] text-white rounded-full flex items-center justify-center font-bold text-lg mr-3">
-                      {depoimento.foto}
+                    <div className="relative w-12 h-12 rounded-full overflow-hidden bg-gray-200 mr-3 flex-shrink-0">
+                      <Image
+                        src={depoimento.foto}
+                        alt={`${depoimento.nome} - ${depoimento.negocio}`}
+                        fill
+                        className="object-cover"
+                      />
                     </div>
                     <div>
                       <p className="font-bold text-[#333333]">{depoimento.nome}</p>
