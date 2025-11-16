@@ -410,11 +410,11 @@ export default function HomePage() {
             <div className="mb-12">
               <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-xl">
                 <div className="grid lg:grid-cols-2 gap-8 items-center">
-                  {/* Imagem da pessoa usando */}
+                  {/* Dashboard Limpo do Sistema */}
                   <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-gray-100">
                     <Image
-                      src="/landing/salon-professional-using-system.png"
-                      alt="Profissional de salão usando o Sistema Beleza no computador"
+                      src="/landing/dashboard-limpo-sistema.png"
+                      alt="Dashboard completo do Sistema Beleza com menu lateral e controles"
                       fill
                       className="object-cover"
                     />
@@ -483,20 +483,20 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Card 2 - Confirmação de Agendamento */}
+              {/* Card 2 - Página de Agendamento Público */}
               <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
                 <div className="relative aspect-[3/4] bg-gray-100">
                   <Image
-                    src="/landing/confirmacao-agendamento.jpeg"
-                    alt="Confirmação de agendamento do Sistema Beleza - Serviço BARBA com profissional JULIO CESAR"
+                    src="/landing/pagina-agendamento-publico.jpeg"
+                    alt="Página de agendamento público do Sistema Beleza - Escolha de serviços com preços e duração"
                     fill
                     className="object-cover"
                   />
                 </div>
                 <div className="p-4">
-                  <h4 className="font-bold text-[#333333] mb-2">Agendamento Confirmado</h4>
+                  <h4 className="font-bold text-[#333333] mb-2">Link de Agendamento Online</h4>
                   <p className="text-sm text-gray-600">
-                    Página profissional de confirmação com todos os detalhes: serviço, profissional, data e horário. Cliente recebe confirmação automática.
+                    Seu salão ganha uma página profissional para agendamentos online. Clientes escolhem serviços, profissionais e horários de forma autônoma, 24h por dia.
                   </p>
                 </div>
               </div>
