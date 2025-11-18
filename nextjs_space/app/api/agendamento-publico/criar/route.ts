@@ -1,6 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { enviarWebhookAgendamento } from '@/lib/webhook-utils'
 
 export async function POST(request: NextRequest) {
   try {
@@ -124,9 +125,25 @@ export async function POST(request: NextRequest) {
       },
       include: {
         servico: true,
-        profissional: true
+        profissional: true,
+        cliente: true,
+        salao: true
       }
     })
+
+    // Enviar webhook Fiqon se configurado
+    if (agendamento.salao.automacao_ativa && agendamento.salao.webhook_fiqon) {
+      try {
+        await enviarWebhookAgendamento(
+          agendamento,
+          agendamento.salao,
+          'agendamento_criado'
+        )
+      } catch (webhookError) {
+        console.error('Erro ao enviar webhook de novo agendamento:', webhookError)
+        // Não retornar erro, apenas logar
+      }
+    }
 
     return NextResponse.json({
       success: true,

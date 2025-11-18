@@ -29,6 +29,7 @@ import {
   Building2
 } from 'lucide-react'
 import Image from 'next/image'
+import Link from 'next/link'
 
 interface Servico {
   id: string
@@ -47,6 +48,7 @@ interface Profissional {
 interface Salao {
   id: string
   nome: string
+  slug?: string | null
   telefone?: string | null
   email?: string | null
   endereco?: string | null
@@ -70,6 +72,7 @@ export default function AgendamentoPublicoForm({ salao }: Props) {
   const [loadingHorarios, setLoadingHorarios] = useState(false)
   const [horariosDisponiveis, setHorariosDisponiveis] = useState<string[]>([])
   const [concluido, setConcluido] = useState(false)
+  const [agendamentoId, setAgendamentoId] = useState<string>('')
 
   const [formData, setFormData] = useState({
     nome_cliente: '',
@@ -155,6 +158,7 @@ export default function AgendamentoPublicoForm({ salao }: Props) {
       const data = await res.json()
 
       if (res.ok) {
+        setAgendamentoId(data.agendamento?.id || '')
         setConcluido(true)
         toast.success('Agendamento realizado com sucesso!')
       } else {
@@ -227,26 +231,37 @@ export default function AgendamentoPublicoForm({ salao }: Props) {
               Você receberá uma confirmação em breve. Em caso de dúvidas, entre em contato conosco.
             </p>
 
-            <Button
-              onClick={() => {
-                setFormData({
-                  nome_cliente: '',
-                  telefone_cliente: '',
-                  email_cliente: '',
-                  servico_id: '',
-                  profissional_id: '',
-                  data: '',
-                  horario: '',
-                  observacoes: ''
-                })
-                setStep(1)
-                setConcluido(false)
-                setHorariosDisponiveis([])
-              }}
-              variant="outline"
-            >
-              Fazer Novo Agendamento
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button
+                onClick={() => {
+                  setFormData({
+                    nome_cliente: '',
+                    telefone_cliente: '',
+                    email_cliente: '',
+                    servico_id: '',
+                    profissional_id: '',
+                    data: '',
+                    horario: '',
+                    observacoes: ''
+                  })
+                  setStep(1)
+                  setConcluido(false)
+                  setHorariosDisponiveis([])
+                  setAgendamentoId('')
+                }}
+                variant="outline"
+              >
+                Fazer Novo Agendamento
+              </Button>
+
+              {agendamentoId && (
+                <Link href={`/agendamento/${salao.slug}/cancelar/${agendamentoId}`}>
+                  <Button variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                    Cancelar este Agendamento
+                  </Button>
+                </Link>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>

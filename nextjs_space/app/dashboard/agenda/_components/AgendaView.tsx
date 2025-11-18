@@ -35,6 +35,9 @@ interface Agendamento {
   status: string
   origem: string
   observacoes?: string
+  cancelado_por?: string
+  motivo_cancelamento?: string
+  data_cancelamento?: string
 }
 
 interface ConfiguracoesSalao {
@@ -115,7 +118,11 @@ export default function AgendaView() {
       const res = await fetch(`/api/agendamentos/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'CANCELADO' })
+        body: JSON.stringify({ 
+          status: 'CANCELADO',
+          cancelado_por: 'ADMIN',
+          data_cancelamento: new Date().toISOString()
+        })
       })
 
       if (res.ok) {
@@ -304,15 +311,31 @@ export default function AgendaView() {
                 {agendamentos.map((agendamento) => (
                   <div
                     key={agendamento.id}
-                    className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                    className={`border rounded-lg p-4 hover:shadow-md transition-shadow ${
+                      agendamento.status === 'CANCELADO' 
+                        ? 'bg-gray-50 border-gray-300 opacity-75' 
+                        : ''
+                    }`}
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                          <User className="h-6 w-6 text-blue-600" />
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                          agendamento.status === 'CANCELADO'
+                            ? 'bg-gray-200'
+                            : 'bg-blue-100'
+                        }`}>
+                          <User className={`h-6 w-6 ${
+                            agendamento.status === 'CANCELADO'
+                              ? 'text-gray-600'
+                              : 'text-blue-600'
+                          }`} />
                         </div>
                         <div>
-                          <h4 className="font-semibold text-gray-900">
+                          <h4 className={`font-semibold ${
+                            agendamento.status === 'CANCELADO'
+                              ? 'text-gray-700'
+                              : 'text-gray-900'
+                          }`}>
                             {agendamento.cliente.nome}
                           </h4>
                           <p className="text-sm text-gray-500">
@@ -320,7 +343,7 @@ export default function AgendaView() {
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap justify-end">
                         <Badge className={getStatusColor(agendamento.status)}>
                           {getStatusLabel(agendamento.status)}
                         </Badge>
@@ -369,6 +392,36 @@ export default function AgendaView() {
                       <p className="text-sm text-gray-600 mb-3 italic">
                         Obs: {agendamento.observacoes}
                       </p>
+                    )}
+
+                    {/* Informações de Cancelamento */}
+                    {agendamento.status === 'CANCELADO' && (
+                      <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <div className="flex items-start gap-2">
+                          <XCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-red-800 mb-1">
+                              Cancelado {agendamento.cancelado_por === 'CLIENTE' ? 'pelo cliente' : 'pelo admin'}
+                            </p>
+                            {agendamento.data_cancelamento && (
+                              <p className="text-xs text-red-700 mb-1">
+                                Em {new Date(agendamento.data_cancelamento).toLocaleDateString('pt-BR', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </p>
+                            )}
+                            {agendamento.motivo_cancelamento && (
+                              <p className="text-xs text-red-700 italic">
+                                Motivo: {agendamento.motivo_cancelamento}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     )}
 
                     {/* Botões de ação */}

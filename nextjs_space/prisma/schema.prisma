@@ -225,6 +225,9 @@ model Agendamento {
   observacoes         String?
   valor_cobrado       Decimal?             @db.Decimal(10,2)
   desconto            Decimal?             @default(0) @db.Decimal(10,2)
+  cancelado_por       String?              // "CLIENTE" ou "ADMIN" ou null
+  motivo_cancelamento String?              // Motivo opcional do cancelamento
+  data_cancelamento   DateTime?            // Data e hora do cancelamento
   data_criacao        DateTime             @default(now())
   data_atualizacao    DateTime             @updatedAt
 
