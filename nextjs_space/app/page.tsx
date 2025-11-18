@@ -293,15 +293,16 @@ export default function HomePage() {
               </a>
             </div>
 
-            {/* Screenshot Real do Sistema */}
+            {/* Vídeo Institucional do Sistema */}
             <div className="relative mt-12">
               <div className="relative w-full max-w-4xl mx-auto aspect-video bg-gray-100 rounded-2xl shadow-2xl overflow-hidden">
-                <Image
-                  src="/landing/dashboard-limpo-sistema.png"
-                  alt="Dashboard completo do Sistema Beleza com menu lateral e controles"
-                  fill
-                  className="object-cover"
-                  priority
+                <iframe
+                  src="https://www.youtube.com/embed/_o7oGnd3gns?autoplay=1&mute=1&loop=1&playlist=_o7oGnd3gns&controls=0&modestbranding=1&showinfo=0&rel=0"
+                  title="Vídeo institucional do Sistema Beleza"
+                  allow="autoplay; encrypted-media"
+                  loading="lazy"
+                  className="absolute inset-0 w-full h-full"
+                  style={{ border: 'none' }}
                 />
               </div>
             </div>
@@ -314,7 +315,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-6xl mx-auto">
             <h2 className="text-3xl sm:text-4xl font-bold text-[#333333] text-center mb-12">
-              Dores comuns vs. Soluções reais
+              Dias Caóticos vs Solução Real
             </h2>
             
             <div className="grid md:grid-cols-2 gap-8">
