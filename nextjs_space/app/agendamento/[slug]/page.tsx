@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Calendar } from '@/components/ui/calendar'
 import { toast } from 'sonner'
-import { Clock, DollarSign, Instagram, MessageCircle, ChevronLeft, Check } from 'lucide-react'
+import { Clock, DollarSign, Instagram, MessageCircle, ChevronLeft, Check, XCircle, Search } from 'lucide-react'
 import { ptBR } from 'date-fns/locale'
 
 interface Salao {
@@ -65,6 +65,16 @@ export default function AgendamentoPublicoPage() {
   const [loadingSlots, setLoadingSlots] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [agendamentoId, setAgendamentoId] = useState<string | null>(null)
+  
+  // Estados para cancelamento
+  const [showCancelModal, setShowCancelModal] = useState(false)
+  const [cancelSearchName, setCancelSearchName] = useState('')
+  const [cancelSearchPhone, setCancelSearchPhone] = useState('')
+  const [searchingAppointments, setSearchingAppointments] = useState(false)
+  const [foundAppointments, setFoundAppointments] = useState<any[]>([])
+  const [selectedAppointmentToCancel, setSelectedAppointmentToCancel] = useState<any>(null)
+  const [cancelReason, setCancelReason] = useState('')
+  const [cancelling, setCancelling] = useState(false)
 
   useEffect(() => {
     if (slug) {
@@ -228,6 +238,80 @@ export default function AgendamentoPublicoPage() {
     return mins > 0 ? `${horas}h ${mins}min` : `${horas}h`
   }
 
+  async function buscarAgendamentos() {
+    if (!cancelSearchName && !cancelSearchPhone) {
+      toast.error('Preencha seu nome ou telefone')
+      return
+    }
+
+    try {
+      setSearchingAppointments(true)
+      setFoundAppointments([])
+      
+      const res = await fetch('/api/agendamento-publico/buscar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slug,
+          nome_cliente: cancelSearchName,
+          telefone_cliente: cancelSearchPhone
+        })
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        setFoundAppointments(data)
+        if (data.length === 0) {
+          toast.info('Você não possui agendamentos ativos')
+        }
+      } else {
+        toast.error(data.error || 'Erro ao buscar agendamentos')
+      }
+    } catch (error) {
+      toast.error('Erro ao buscar agendamentos')
+    } finally {
+      setSearchingAppointments(false)
+    }
+  }
+
+  async function confirmarCancelamento() {
+    if (!selectedAppointmentToCancel) return
+
+    try {
+      setCancelling(true)
+
+      const res = await fetch('/api/agendamento-publico/cancelar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          agendamento_id: selectedAppointmentToCancel.id,
+          nome_cliente: cancelSearchName,
+          telefone_cliente: cancelSearchPhone,
+          motivo: cancelReason
+        })
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        toast.success('Agendamento cancelado com sucesso!')
+        setShowCancelModal(false)
+        setCancelSearchName('')
+        setCancelSearchPhone('')
+        setCancelReason('')
+        setFoundAppointments([])
+        setSelectedAppointmentToCancel(null)
+      } else {
+        toast.error(data.error || 'Erro ao cancelar agendamento')
+      }
+    } catch (error) {
+      toast.error('Erro ao cancelar agendamento')
+    } finally {
+      setCancelling(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -267,7 +351,15 @@ export default function AgendamentoPublicoPage() {
                 <p className="text-muted-foreground text-sm">{salao.descricao}</p>
               )}
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
+              {/* Botão Discreto de Cancelamento */}
+              <button
+                onClick={() => setShowCancelModal(true)}
+                className="text-xs text-muted-foreground hover:text-destructive transition-colors underline"
+              >
+                Cancelar agendamento
+              </button>
+              
               {salao.instagram_url && (
                 <a 
                   href={salao.instagram_url} 
@@ -550,6 +642,166 @@ export default function AgendamentoPublicoPage() {
           </div>
         )}
       </div>
+
+      {/* Modal de Cancelamento */}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <Card className="w-full max-w-2xl max-h-[90vh] overflow-auto">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <XCircle className="h-5 w-5 text-destructive" />
+                  Cancelar Agendamento
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setShowCancelModal(false)
+                    setCancelSearchName('')
+                    setCancelSearchPhone('')
+                    setFoundAppointments([])
+                    setSelectedAppointmentToCancel(null)
+                  }}
+                >
+                  ✕
+                </Button>
+              </div>
+              <CardDescription>
+                Digite seu nome ou telefone para encontrar seus agendamentos
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Formulário de Busca */}
+              {!selectedAppointmentToCancel && (
+                <div className="space-y-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="cancel-name">Seu Nome</Label>
+                      <Input
+                        id="cancel-name"
+                        value={cancelSearchName}
+                        onChange={(e) => setCancelSearchName(e.target.value)}
+                        placeholder="Digite seu nome"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="cancel-phone">Seu Telefone</Label>
+                      <Input
+                        id="cancel-phone"
+                        value={cancelSearchPhone}
+                        onChange={(e) => setCancelSearchPhone(e.target.value)}
+                        placeholder="(00) 00000-0000"
+                      />
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={buscarAgendamentos}
+                    disabled={searchingAppointments}
+                    className="w-full"
+                  >
+                    {searchingAppointments ? (
+                      <>Buscando...</>
+                    ) : (
+                      <>
+                        <Search className="mr-2 h-4 w-4" />
+                        Buscar Meus Agendamentos
+                      </>
+                    )}
+                  </Button>
+
+                  {/* Lista de Agendamentos Encontrados */}
+                  {foundAppointments.length > 0 && (
+                    <div className="space-y-3 mt-6">
+                      <h3 className="font-semibold text-sm">Seus agendamentos:</h3>
+                      {foundAppointments.map((agendamento) => (
+                        <Card 
+                          key={agendamento.id}
+                          className="cursor-pointer hover:border-primary transition-colors"
+                          onClick={() => setSelectedAppointmentToCancel(agendamento)}
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1 space-y-1">
+                                <div className="font-semibold">{agendamento.servico.nome}</div>
+                                <div className="text-sm text-muted-foreground">
+                                  {agendamento.profissional.nome}
+                                </div>
+                                <div className="text-sm">
+                                  📅 {new Date(agendamento.data).toLocaleDateString('pt-BR')}
+                                  {' às '}
+                                  {new Date(agendamento.hora_inicio).toLocaleTimeString('pt-BR', {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </div>
+                                <div className="text-sm text-green-600 font-semibold">
+                                  {formatarPreco(agendamento.servico.preco)}
+                                </div>
+                              </div>
+                              <Badge variant="default">{agendamento.status}</Badge>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Confirmação de Cancelamento */}
+              {selectedAppointmentToCancel && (
+                <div className="space-y-4">
+                  <div className="bg-muted p-4 rounded-lg space-y-2">
+                    <h3 className="font-semibold">Confirmar cancelamento:</h3>
+                    <div className="space-y-1 text-sm">
+                      <p><strong>Serviço:</strong> {selectedAppointmentToCancel.servico.nome}</p>
+                      <p><strong>Profissional:</strong> {selectedAppointmentToCancel.profissional.nome}</p>
+                      <p><strong>Data:</strong> {new Date(selectedAppointmentToCancel.data).toLocaleDateString('pt-BR')}</p>
+                      <p><strong>Horário:</strong> {new Date(selectedAppointmentToCancel.hora_inicio).toLocaleTimeString('pt-BR', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="cancel-reason">Motivo do cancelamento (opcional)</Label>
+                    <Input
+                      id="cancel-reason"
+                      value={cancelReason}
+                      onChange={(e) => setCancelReason(e.target.value)}
+                      placeholder="Conte-nos o motivo..."
+                    />
+                  </div>
+
+                  <div className="flex gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedAppointmentToCancel(null)
+                        setCancelReason('')
+                      }}
+                      className="flex-1"
+                    >
+                      Voltar
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={confirmarCancelamento}
+                      disabled={cancelling}
+                      className="flex-1"
+                    >
+                      {cancelling ? 'Cancelando...' : 'Confirmar Cancelamento'}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }
