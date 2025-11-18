@@ -488,8 +488,8 @@ export default function HomePage() {
               <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
                 <div className="relative aspect-[3/4] bg-gray-100">
                   <Image
-                    src="/landing/pagina-agendamento-publico.jpeg"
-                    alt="Página de agendamento público do Sistema Beleza - Escolha de serviços com preços e duração"
+                    src="/landing/confirmacao-agendamento.jpeg"
+                    alt="Confirmação de agendamento do Sistema Beleza - Serviço e profissional confirmados"
                     fill
                     className="object-cover"
                   />

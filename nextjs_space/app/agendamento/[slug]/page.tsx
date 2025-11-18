@@ -64,6 +64,7 @@ export default function AgendamentoPublicoPage() {
   const [loading, setLoading] = useState(true)
   const [loadingSlots, setLoadingSlots] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [agendamentoId, setAgendamentoId] = useState<string | null>(null)
 
   useEffect(() => {
     if (slug) {
@@ -192,6 +193,8 @@ export default function AgendamentoPublicoPage() {
       })
 
       if (res.ok) {
+        const agendamento = await res.json()
+        setAgendamentoId(agendamento.id)
         setStep('sucesso')
       } else {
         const error = await res.json()
@@ -527,9 +530,21 @@ export default function AgendamentoPublicoPage() {
                   <p><strong>Data:</strong> {selectedDate?.toLocaleDateString('pt-BR')}</p>
                   <p><strong>Horário:</strong> {selectedSlot}</p>
                 </div>
-                <Button onClick={() => window.location.reload()} variant="outline">
-                  Fazer Novo Agendamento
-                </Button>
+                
+                <div className="space-y-3">
+                  {agendamentoId && (
+                    <Button 
+                      onClick={() => window.location.href = `/agendamento/${slug}/cancelar/${agendamentoId}`}
+                      variant="destructive"
+                      className="w-full"
+                    >
+                      Cancelar este Agendamento
+                    </Button>
+                  )}
+                  <Button onClick={() => window.location.reload()} variant="outline" className="w-full">
+                    Fazer Novo Agendamento
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </div>
