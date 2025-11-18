@@ -15,23 +15,57 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const clientes = await prisma.cliente.findMany({
+    // Busca todos os clientes do salão que já têm cadastro
+    const clientesCadastrados = await prisma.cliente.findMany({
       where: {
         salao_id: session.user.salao_id,
         status: 'ATIVO'
       },
+      include: {
+        agendamentos: {
+          orderBy: {
+            data: 'desc'
+          },
+          take: 1,
+          select: {
+            data: true,
+            hora_inicio: true,
+            status: true
+          }
+        }
+      },
       orderBy: {
         nome: 'asc'
-      },
-      select: {
-        id: true,
-        nome: true,
-        telefone: true,
-        email: true
       }
     })
 
-    return NextResponse.json(clientes)
+    // Busca todos os agendamentos para estatísticas
+    const agendamentosPorCliente = await prisma.agendamento.groupBy({
+      by: ['cliente_id'],
+      where: {
+        salao_id: session.user.salao_id
+      },
+      _count: {
+        id: true
+      }
+    })
+
+    // Cria um mapa de estatísticas
+    const statsMap = new Map(
+      agendamentosPorCliente.map(stat => [stat.cliente_id, stat._count.id])
+    )
+
+    // Formata os dados dos clientes
+    const clientesComStats = clientesCadastrados.map(cliente => ({
+      id: cliente.id,
+      nome: cliente.nome,
+      telefone: cliente.telefone,
+      email: cliente.email,
+      total_agendamentos: statsMap.get(cliente.id) || 0,
+      ultimo_agendamento: cliente.agendamentos[0] || null
+    }))
+
+    return NextResponse.json(clientesComStats)
   } catch (error) {
     console.error('Erro ao buscar clientes:', error)
     return NextResponse.json(
